@@ -1,0 +1,23 @@
+---
+status: active
+last-reviewed: 2026-05-07
+owner: axm-skill
+entries:
+  - path: architecture.mdc
+    title: 架构约定
+    when-to-read: 修改 skill 结构 / 新增脚本 / 新增模板 / 调整分工时
+  - path: coding.mdc
+    title: 编码规范
+    when-to-read: 修改任一 .mjs 脚本、模板、SKILL.md、references 时
+---
+
+# project/ — 项目规范（axm）
+
+绑定 axm skill 包的工程规范。所有文件使用 Frontmatter 骨架 A（`applies-to: [project:axm]`）。
+
+## 索引
+
+| 文件 | 内容 | 何时读取 |
+|---|---|---|
+| `architecture.mdc` | 扁平结构、四大角色、职责边界、扩展原则 | 改动 skill 结构或新增能力前 |
+| `coding.mdc` | 脚本零依赖约束、ESM、退出码语义、YAML 解析边界、写作风格 | 编写或修改代码/文档时 |

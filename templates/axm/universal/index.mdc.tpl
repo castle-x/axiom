@@ -1,0 +1,31 @@
+---
+status: active
+last-reviewed: {{date}}
+owner: {{owner}}
+entries:
+  - path: devloop.mdc
+    title: DEVLOOP 状态机
+    when-to-read: 每次任务开始时，确认 T0-T3 分级与分支流程
+  - path: quality.mdc
+    title: 质量保障规范
+    when-to-read: 编码完成前、提交前的质量门禁
+  - path: docs.mdc
+    title: 文档规范
+    when-to-read: 产出 .axm 下任何 .mdc 文档时
+  - path: vcs.mdc
+    title: 版本控制规范
+    when-to-read: 代码提交/分支操作前
+---
+
+# universal/ — 通用规范
+
+跨项目通用的工程规范，内容换一个项目仍然适用。所有文件使用 Frontmatter 骨架 A（`applies-to: [universal]`）。
+
+## 索引
+
+| 文件 | 内容 | 何时读取 |
+|---|---|---|
+| `devloop.mdc` | DEVLOOP 状态机（意图识别→分级→分支→验证→交付） | 每次任务开始时 |
+| `quality.mdc` | 测试策略、质量门禁、回归防护 | 编码完成/提交前 |
+| `docs.mdc` | 文档规范（Frontmatter 骨架 / 命名 / 索引 / 审查） | 产出文档时 |
+| `vcs.mdc` | 版本控制（分支策略 / 原子提交 / 需求生命周期） | 代码变更时 |
