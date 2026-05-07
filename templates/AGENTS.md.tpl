@@ -2,7 +2,7 @@
 
 {{project_name}} 项目的 AI 协作入口文档。本文是 AI 处理本仓库任务的**唯一入口规则文档**；其他工具文件（`CLAUDE.md` / `CODEBUDDY.md` 等）仅作摘要，冲突时以本文为准。
 
-> 本文由 [axm skill](https://github.com/castlexu/axiom) 生成骨架，项目特有内容（架构、包边界、Knowledge Index）由 AI 按项目实际补全。
+> 本文由 [axm skill](https://github.com/castle-x/axiom) 生成骨架，项目特有内容（架构、包边界、Knowledge Index）由 AI 按项目实际补全。
 
 ## .axm 召回声明
 

@@ -2,7 +2,7 @@
 
 axm 是一个 Anthropic Agent Skill 包，用于帮新项目快速完成 `.axm/` 知识库与 `AGENTS.md` 根入口的初始化。本文是 AI 处理本仓库任务的**唯一入口规则文档**；其他工具文件（`CLAUDE.md` / `CODEBUDDY.md` 等）仅作摘要，冲突时以本文为准。
 
-> 本仓库吃自己的狗粮：axm skill 自身的 `.axm/` 就是"用 axm 初始化一个 axm 项目"的产物。
+> 本仓库进行自用验证：axm skill 自身的 `.axm/` 就是“用 axm 初始化一个 axm 项目”的产物。
 
 ## .axm 召回声明
 
@@ -31,7 +31,7 @@ axm 采用**扁平结构**（非 monorepo），git clone 到 `~/.claude/skills/a
 - `templates/**/*.tpl` — 脚本逐字释放的模板（含 `{{owner}}` / `{{date}}` / `{{project_name}}` 三个变量）
 - `scripts/*.mjs` — 零依赖 Node 脚本（scaffold / validate / reindex）
 - `scripts/_lib/*.mjs` — 脚本共享模块（frontmatter 解析器、walker、logger）
-- `.axm/` + `AGENTS.md` — 本仓库自身的 AI 上下文（吃狗粮）
+- `.axm/` + `AGENTS.md` — 本仓库自身的 AI 上下文（自用验证）
 
 ### 设计哲学
 

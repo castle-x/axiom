@@ -26,11 +26,11 @@ axm 是 Agent Skill，不需要 `npm install`。把本仓库放到 AI 客户端�
 
 ```bash
 # 全局安装（跨所有项目可用）
-git clone https://github.com/<your>/axiom ~/.claude/skills/axm
+git clone https://github.com/castle-x/axiom.git ~/.claude/skills/axm
 
 # 或项目级安装（只对当前仓库可用）
 cd <your-project>
-git clone https://github.com/<your>/axiom .claude/skills/axm
+git clone https://github.com/castle-x/axiom.git .claude/skills/axm
 ```
 
 ### Codebuddy / 其他支持 Skills 的客户端
@@ -122,8 +122,8 @@ node /path/to/axm/scripts/reindex.mjs --target=<项目根> [--dry-run]
 axm/
 ├── SKILL.md                 # Agent Skill 入口（name + description + 5 阶段 SOP）
 ├── README.md                # 本文件
-├── AGENTS.md                # 本仓库自身的 AI 入口（吃狗粮）
-├── .axm/                    # 本仓库自身的 .axm/（axm 初始化了自己，见吃狗粮章节）
+├── AGENTS.md                # 本仓库自身的 AI 入口（自用验证）
+├── .axm/                    # 本仓库自身的 .axm/（axm 初始化了自己，见自用验证章节）
 ├── references/              # AI Phase 3 按需加载的写作指南
 │   ├── frontmatter-contracts.md
 │   ├── project-spec-guide.md
@@ -142,9 +142,9 @@ axm/
         └── logger.mjs
 ```
 
-## 吃狗粮
+## 自用验证
 
-本仓库自身的 `.axm/` 就是"用 axm 初始化一个叫 axm 的项目"的产物。你可以直接读 `AGENTS.md` 和 `.axm/` 看看初始化结果长什么样。
+本仓库自身的 `.axm/` 就是“用 axm 初始化一个叫 axm 的项目”的产物，也就是常说的 dogfooding：工具先用在自己身上，验证输出结构和规则是否可用。你可以直接读 `AGENTS.md` 和 `.axm/` 看看初始化结果长什么样。
 
 想验证？
 
