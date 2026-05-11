@@ -1,24 +1,8 @@
 # AGENTS.md
 
-axm 是一个 Anthropic Agent Skill 包，用于帮新项目快速完成 `.axm/` 知识库与 `AGENTS.md` 根入口的初始化。本文是 AI 处理本仓库任务的**唯一入口规则文档**；其他工具文件（`CLAUDE.md` / `CODEBUDDY.md` 等）仅作摘要，冲突时以本文为准。
+axm 是一个 Anthropic Agent Skill 包，用于帮新项目快速完成 `.axm/` 知识库与 `AGENTS.md` 根入口的初始化。本文是 AI 处理本仓库任务的入口规则文档。
 
-> 本仓库进行自用验证：axm skill 自身的 `.axm/` 就是“用 axm 初始化一个 axm 项目”的产物。
-
-## .axm 召回声明
-
-**本条优先级最高，高于其余所有规则。**
-
-每轮若实际读取过 `.axm/` 下任何文件，**必须**在回答最开头输出：
-
-> **.axm 召回**
->
->
-> | 文件          | 读取原因  |
-> | ----------- | ----- |
-> | `.axm/<路径>` | <一句话> |
->
-
-仅列实际读取的文件，按读取顺序排列；本轮未读则不输出此块；沿用上轮已读内容仍需列出。该表格必须是回答的第一块内容。
+本仓库**不再 dogfood 自己生成的 `.axm/`**。维护 axm skill 时，以根目录源码、`SKILL.md`、`references/`、`templates/` 与 `scripts/` 为准；需要验证输出结构时，使用临时目标目录跑 scaffold/validate/reindex smoke test。
 
 ## Architecture
 
@@ -31,7 +15,7 @@ axm 采用**扁平结构**（非 monorepo），git clone 到 `~/.claude/skills/a
 - `templates/**/*.tpl` — 脚本逐字释放的模板（含 `{{owner}}` / `{{date}}` / `{{project_name}}` 三个变量）
 - `scripts/*.mjs` — 零依赖 Node 脚本（scaffold / validate / reindex）
 - `scripts/_lib/*.mjs` — 脚本共享模块（axm-meta 解析器、walker、logger）
-- `.axm/` + `AGENTS.md` — 本仓库自身的 AI 上下文（自用验证）
+- `AGENTS.md` — 本仓库维护入口规则
 
 ### 设计哲学
 
@@ -43,8 +27,6 @@ axm 采用**扁平结构**（非 monorepo），git clone 到 `~/.claude/skills/a
 - **模板变量只 3 个**：`{{owner}}` / `{{date}}` / `{{project_name}}`
 - **SKILL.md < 500 行**：超了拆到 `references/`
 - **扩展方向**：新能力优先走"改 SOP"或"改 references"，再考虑新增脚本；禁止让脚本做栈判断
-
-细节见 `.axm/project/architecture.md`。
 
 ## Coding Rules
 
@@ -119,17 +101,21 @@ axm 采用**扁平结构**（非 monorepo），git clone 到 `~/.claude/skills/a
 
 ## Knowledge Index
 
-| 任务类型                      | 读哪里                                                                            |
-| ------------------------- | ------------------------------------------------------------------------------ |
-| 每次任务开始 / 分级与流程            | `.axm/universal/devloop.md`                                                   |
-| 编码完成 / 提交前质量门禁            | `.axm/universal/quality.md`                                                   |
-| 提交 / 分支操作                 | `.axm/universal/vcs.md`                                                       |
-| 写 `.axm` 文档 / 四套骨架契约      | `.axm/universal/docs.md`                                                      |
-| 管理 roadmap / spec / 开发进度     | `.axm/universal/docs.md` + `.axm/progress/index.md`                          |
-| 修改脚本（scaffold/validate/reindex） | `.axm/project/coding.md` + `.axm/knowledge/scripts/overview.md`        |
-| 新增脚本能力 / 跨包边界             | `.axm/project/architecture.md`                                                |
-| 修改 SKILL.md 或 references  | `.axm/project/architecture.md` + `.axm/project/coding.md`（写作风格）             |
-| 修改 templates/             | `.axm/project/architecture.md`（模板变量约束）                                        |
-| Bug 修复                    | `.axm/universal/devloop.md` + `.axm/knowledge/scripts/overview.md`           |
+| 任务类型 | 读哪里 |
+| --- | --- |
+| 理解 skill 流程 / 修改 SOP | `SKILL.md` |
+| 修改 Phase 3 写作指南 | `references/*.md` |
+| 修改生成内容 / universal 规则 | `templates/**/*.tpl`，必要时同步相关 `references/*.md` |
+| 修改 scaffold/validate/reindex | `scripts/*.mjs` + `scripts/_lib/*.mjs` |
+| 了解用户侧产物结构 | `README.md` 的"完成后你的仓库会多出"与 `templates/` |
+| 验证脚本或模板改动 | 在临时目录运行 scaffold → validate → reindex |
 
-`.axm/` 目录分区：`universal/`（通用流程）、`project/`（本项目规范）、`knowledge/`（系统设计事实）、`progress/`（roadmap、阶段 spec、验收状态）。各目录有 `index.md` 总索引。
+## Quality Gate
+
+| 场景 | 命令 | 要求 |
+| --- | --- | --- |
+| 修改脚本 | `node scripts/validate.mjs --target=<临时 axm 项目>` | 零 ERROR（WARN 需解释） |
+| 修改模板 | `node scripts/scaffold.mjs --owner=smoke --date=<YYYY-MM-DD> --project-name=smoke --target=<临时目录>` 后接 validate/reindex | 生成结果可校验，且无 `{{...}}` 残留 |
+| 修改 `SKILL.md` / `references/` | 人工检查流程一致性；必要时跑一次完整 smoke test | 不引入与模板或脚本冲突的说明 |
+
+不要再用 `node scripts/validate.mjs --target=.` 作为本仓库自测；仓库根目录不是 axm 目标项目。

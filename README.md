@@ -128,8 +128,7 @@ node /path/to/axm/scripts/reindex.mjs --target=<项目根> [--dry-run]
 axm/
 ├── SKILL.md                 # Agent Skill 入口（name + description + 5 阶段 SOP）
 ├── README.md                # 本文件
-├── AGENTS.md                # 本仓库自身的 AI 入口（自用验证）
-├── .axm/                    # 本仓库自身的 .axm/（axm 初始化了自己，见自用验证章节）
+├── AGENTS.md                # 本仓库维护入口规则
 ├── references/              # AI Phase 3 按需加载的写作指南
 │   ├── axm-meta-contracts.md
 │   ├── project-spec-guide.md
@@ -149,17 +148,29 @@ axm/
         └── logger.mjs
 ```
 
-## 自用验证
+## 维护与验证
 
-本仓库自身的 `.axm/` 就是“用 axm 初始化一个叫 axm 的项目”的产物，也就是常说的 dogfooding：工具先用在自己身上，验证输出结构和规则是否可用。你可以直接读 `AGENTS.md` 和 `.axm/` 看看初始化结果长什么样。
+本仓库不再把自身作为 axm target。维护 skill 包时，以根目录的 `SKILL.md`、`references/`、`templates/` 与 `scripts/` 为准；验证输出结构时，用临时目录模拟一个用户项目。
 
-想验证？
+推荐 smoke test：
 
 ```bash
 cd /path/to/axm
-node scripts/validate.mjs --target=.
-# Expected: Summary: 0 error(s), 0 warning(s)
+
+SMOKE_DIR="${TMPDIR:-/tmp}/axm-smoke-$(date +%Y%m%d%H%M%S)"
+node scripts/scaffold.mjs \
+  --owner=smoke \
+  --date=2026-05-12 \
+  --project-name=smoke \
+  --target="$SMOKE_DIR"
+
+node scripts/validate.mjs --target="$SMOKE_DIR"
+node scripts/reindex.mjs --target="$SMOKE_DIR"
+
+grep -R "{{" "$SMOKE_DIR" || true
 ```
+
+期望结果：validate 为 `0 error(s), 0 warning(s)`，reindex 无失败，生成文件里没有未替换的 `{{...}}`。
 
 ## FAQ
 
