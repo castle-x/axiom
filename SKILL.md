@@ -4,13 +4,13 @@ description: |
   为项目建立 AI 可读的上下文知识库（.axm/ 目录 + AGENTS.md 路由表），让 AI 接手任务时无需每次重新解释架构和技术栈。
 
   以下情况立即调用本 skill：
-  - 用户提到 "axm"、".axm/"、".mdc 文件"、"初始化 axm"、"建立项目规则库"
+  - 用户提到 "axm"、".axm/"、".md 文件"、"初始化 axm"、"建立项目规则库"
   - 用户想配置 "AI 上下文目录"、"AI 能读懂的上下文规范"、"机器可读的项目规范"
   - 用户说 AI 每次接手任务都要重新解释技术栈 / 架构
   - 用户想给团队统一 AI 上下文、让所有人用 claude 拿到一致的项目知识
   - 用户要配置或补全 AGENTS.md（Knowledge Index / Architecture 段）
-  - 用户要校验 .axm frontmatter 契约（validate.mjs）
-  - 用户要同步 index 索引（reindex / reindex.mjs / index.mdc 没更新）
+  - 用户要校验 .axm axm-meta 契约（validate.mjs）
+  - 用户要同步 index 索引（reindex / reindex.mjs / index.md 没更新）
   - 项目没有 .axm 目录或 AGENTS.md，需要新建
 
   核心流程：5 阶段 SOP（AI 扫项目 → 脚本 scaffold 通用规范 → AI 写项目特有文档 → 脚本校验契约 → 交付）。也可单独跑 validate.mjs 或 reindex.mjs。
@@ -20,7 +20,7 @@ description: |
 
 `.axm/` 是一套**给 AI 看的**项目上下文目录规范：用三类有契约的文档（规范 A / 知识 B / 索引 C）承载"这个项目怎么做、是什么、去哪读"，配合根目录 `AGENTS.md` 的 Knowledge Index 路由表，让 AI 接手任意任务前能快速定位需要的上下文。
 
-本 skill 的核心分工是"**AI 判断 + 脚本机械**"：AI 读项目源码、理解技术栈、撰写项目特有的架构与知识文档；脚本释放跨项目通用的规范（4 份 universal 文件）、校验 frontmatter 契约、同步 index 索引。
+本 skill 的核心分工是"**AI 判断 + 脚本机械**"：AI 读项目源码、理解技术栈、撰写项目特有的架构与知识文档；脚本释放跨项目通用的规范（4 份 universal 文件）、校验 axm-meta 契约、同步 index 索引。
 
 Skill 目录布局：
 
@@ -28,9 +28,9 @@ Skill 目录布局：
 axm/
 ├── SKILL.md              # 本文件
 ├── references/           # AI 按需读的写作指南
-│   ├── frontmatter-contracts.md   # 三套骨架速查
-│   ├── project-spec-guide.md      # 写 project/*.mdc 的要点
-│   ├── knowledge-doc-guide.md     # 写 knowledge/**/*.mdc 的要点
+│   ├── axm-meta-contracts.md   # 三套骨架速查
+│   ├── project-spec-guide.md      # 写 project/*.md 的要点
+│   ├── knowledge-doc-guide.md     # 写 knowledge/**/*.md 的要点
 │   └── agents-md-guide.md         # 定制 AGENTS.md 的要点
 ├── templates/            # 脚本逐字释放的模板（.tpl 后缀）
 │   ├── AGENTS.md.tpl
@@ -111,18 +111,18 @@ node <skill-path>/scripts/scaffold.mjs \
 
 **产出**：目标仓库多出以下文件（9 个）：
 - `AGENTS.md`
-- `.axm/index.mdc`
-- `.axm/universal/{index,docs,devloop,quality,vcs}.mdc`
-- `.axm/project/index.mdc`（空 entries）
-- `.axm/knowledge/index.mdc`（空 entries）
+- `.axm/index.md`
+- `.axm/universal/{index,docs,devloop,quality,vcs}.md`
+- `.axm/project/index.md`（空 entries）
+- `.axm/knowledge/index.md`（空 entries）
 
 ### Phase 3 Author（AI 执行）
 
-**目标**：根据 Phase 1 画像，把"项目特有"的部分填进去。这是整个流程里 AI **唯一**要亲自写 `.mdc` 的阶段。
+**目标**：根据 Phase 1 画像，把"项目特有"的部分填进去。这是整个流程里 AI **唯一**要亲自写 `.md` 的阶段。
 
 **操作**：按顺序做以下 3 件事。每做一件**先读对应的 references 指南**再动手：
 
-#### 3.1 写 `project/architecture.mdc`（必须）
+#### 3.1 写 `project/architecture.md`（必须）
 
 先读 `<skill-path>/references/project-spec-guide.md`。
 
@@ -131,9 +131,9 @@ node <skill-path>/scripts/scaffold.mjs \
 - 依赖方向
 - 硬约束（包边界、禁止直接访问的 API 等）
 
-Frontmatter 用骨架 A（`applies-to: [project:<name>]`）。最短 30-80 行足够。
+axm-meta 用骨架 A（`applies-to: [project:<name>]`）。最短 30-80 行足够。
 
-#### 3.2 写 `project/coding.mdc`（有编码标准就写）
+#### 3.2 写 `project/coding.md`（有编码标准就写）
 
 还是参照 `references/project-spec-guide.md`。按实际技术栈给具体命令：
 - 类型检查 / Lint / 测试的确切 CLI 命令
@@ -147,11 +147,11 @@ Frontmatter 用骨架 A（`applies-to: [project:<name>]`）。最短 30-80 行�
 
 ```
 knowledge/<system>/
-├── index.mdc              # 骨架 C
-└── overview.mdc           # 骨架 B，depth=overview
+├── index.md              # 骨架 C
+└── overview.md           # 骨架 B，depth=overview
 ```
 
-**overview.mdc 的 `code-refs` 必须填真实存在的源码路径**——`validate.mjs` 会硬校验。
+**overview.md 的 `code-refs` 必须填真实存在的源码路径**——`validate.mjs` 会硬校验。
 
 deep 文档（具体话题）**本阶段不写**，只建目录和 overview；后续用户有具体需求时再补。
 
@@ -163,13 +163,13 @@ deep 文档（具体话题）**本阶段不写**，只建目录和 overview；�
 - **Architecture 段**（当前是 TODO 占位）：1-2 屏讲清技术栈、模块划分、依赖方向
 - **Knowledge Index 表**：在已有的 4 条 universal 条目下追加项目特有的"任务类型 → 文档"路由。5-15 条刚好
 
-#### 3.5 更新相关 index.mdc
+#### 3.5 更新相关 index.md
 
-`project/index.mdc` 和 `knowledge/index.mdc` 的 `entries` 需要根据刚写的文件填充。可以手动写，也可以跳过这步——Phase 4 完成后让 `reindex.mjs` 自动补。
+`project/index.md` 和 `knowledge/index.md` 的 `entries` 需要根据刚写的文件填充。可以手动写，也可以跳过这步——Phase 4 完成后让 `reindex.mjs` 自动补。
 
 ### Phase 4 Validate（脚本执行）
 
-**目标**：机械校验 Phase 2+3 的产物符合 `docs.mdc` 契约。
+**目标**：机械校验 Phase 2+3 的产物符合 `docs.md` 契约。
 
 **操作**：
 
@@ -184,9 +184,9 @@ node <skill-path>/scripts/validate.mjs --target=<项目根绝对路径>
 
 常见 ERROR：
 - `code-refs 指向的源码不存在` → Phase 3 填了想象的路径，改成真实路径
-- `last-reviewed 日期格式非法` → 检查 YAML
-- `index.mdc entries 引用的子项不存在` → Phase 3 漏创建或路径写错
-- `Knowledge Index 引用的路径不存在` → AGENTS.md 指向了还没写的 `.mdc`
+- `last-reviewed 日期格式非法` → 检查 axm-meta
+- `index.md entries 引用的子项不存在` → Phase 3 漏创建或路径写错
+- `Knowledge Index 引用的路径不存在` → AGENTS.md 指向了还没写的 `.md`
 
 常见 WARN（可选修）：
 - `发现孤儿子项未登记到 entries` → 运行 `node <skill-path>/scripts/reindex.mjs --target=<项目根>` 自动同步
@@ -204,21 +204,21 @@ node <skill-path>/scripts/validate.mjs --target=<项目根绝对路径>
 
 ### 已创建（机械释放）
 - AGENTS.md
-- .axm/universal/{docs,devloop,quality,vcs}.mdc
-- .axm/{index,universal/index,project/index,knowledge/index}.mdc
+- .axm/universal/{docs,devloop,quality,vcs}.md
+- .axm/{index,universal/index,project/index,knowledge/index}.md
 
 ### 已撰写（项目特有）
-- .axm/project/architecture.mdc — <一句话概括>
-- .axm/project/coding.mdc — <一句话概括>
-- .axm/knowledge/<system>/overview.mdc — <一句话概括>
+- .axm/project/architecture.md — <一句话概括>
+- .axm/project/coding.md — <一句话概括>
+- .axm/knowledge/<system>/overview.md — <一句话概括>
 
 ### Validate 结果
 - 0 errors, N warnings（如有 warn 列出）
 
 ### 后续建议 TODO
-- [ ] universal/quality.mdc 里的占位命令（`<项目 typecheck 命令>` 等）替换为项目实际命令
-- [ ] 随着子系统深入，补 knowledge/<system>/<topic>.mdc deep 文档
-- [ ] 运行测试 / CI 验证 axm 与代码现实一致后，更新各 .mdc 的 last-reviewed
+- [ ] universal/quality.md 里的占位命令（`<项目 typecheck 命令>` 等）替换为项目实际命令
+- [ ] 随着子系统深入，补 knowledge/<system>/<topic>.md deep 文档
+- [ ] 运行测试 / CI 验证 axm 与代码现实一致后，更新各 .md 的 last-reviewed
 ```
 
 ## 单独调用脚本的场景
@@ -235,7 +235,7 @@ node <skill-path>/scripts/validate.mjs --target=<项目根>
 
 ### 只同步 index
 
-用户新增/删除了 `.axm/**/*.mdc` 想更新索引：
+用户新增/删除了 `.axm/**/*.md` 想更新索引：
 
 ```bash
 # 先 dry-run 预览
@@ -248,7 +248,7 @@ reindex 会保留已有 `entries` 的顺序和 title/when-to-read，只追加孤
 
 ## 关键约束（必须遵守）
 
-1. **Phase 2 之前不能写 .mdc**。通用规范由脚本释放，不要手写——否则跨项目会漂移
+1. **Phase 2 之前不能写 .md**。通用规范由脚本释放，不要手写——否则跨项目会漂移
 2. **Phase 3 的 code-refs 必须真实存在**。不要填"听起来合理"的路径，必须实际在仓库里看到这个文件才写
 3. **Phase 4 ERROR 必须修**，不能视而不见交付
 4. **不要自作主张修改 universal/ 下的 4 份文件**。那是跨项目"宪法"，用户若要改应显式说，然后改的是 skill 里的 templates/，不是目标项目里的文件
@@ -260,7 +260,7 @@ reindex 会保留已有 `entries` 的顺序和 title/when-to-read，只追加孤
 
 - **universal 规范跨项目应逐字一致**（它是"宪法"，漂移会让多项目维护者抓狂）—— 适合脚本
 - **project / knowledge 只有 AI 读代码才写得对**（技术栈、模块边界、真实源码路径都是 AI 扫一遍项目才知道的）—— 适合 AI
-- **frontmatter 契约是机械规则**（字段名、日期格式、索引一致性）—— 适合脚本
+- **axm-meta 契约是机械规则**（字段名、日期格式、索引一致性）—— 适合脚本
 - **Knowledge Index 路由（任务→文档映射）需要理解项目任务形态** —— 适合 AI
 
 不用纯脚本是因为脚本会产出"空壳"；不用纯 AI 是因为 AI 每次重写长文档费 token 且容易漂移。两边各做自己擅长的，才能在初始化完的那一刻既有可复用的骨架又有项目特有的血肉。

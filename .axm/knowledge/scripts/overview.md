@@ -1,6 +1,6 @@
----
+<!-- axm-meta
 status: active
-last-reviewed: 2026-05-07
+last-reviewed: 2026-05-11
 owner: axm-skill
 depth: overview
 code-refs:
@@ -8,12 +8,13 @@ code-refs:
   - scripts/validate.mjs
   - scripts/reindex.mjs
   - scripts/_lib/frontmatter.mjs
-  - scripts/_lib/mdc-walker.mjs
+  - scripts/_lib/axm-walker.mjs
   - scripts/_lib/logger.mjs
 related:
-  - ../../project/architecture.mdc
-  - ../../project/coding.mdc
----
+  - ../../project/architecture.md
+  - ../../project/coding.md
+-->
+
 
 # 脚本子系统 — 速查
 
@@ -33,33 +34,33 @@ AI 通过 `node scripts/<name>.mjs <args>` 调用，不直接读取脚本源码�
 |---|---|---|---|
 | `scaffold.mjs` | Phase 2 | `--owner` `--date` `--project-name` `--target` `--force` | 读 `templates/**/*.tpl`，写 `<target>/.axm/` + `<target>/AGENTS.md` |
 | `validate.mjs` | Phase 4 | `--target` | 只读 `<target>/.axm/` + `<target>/AGENTS.md`，打印结果 |
-| `reindex.mjs` | Phase 4 辅助 / 独立调用 | `--target` `--dry-run` | 读写 `<target>/.axm/**/index.mdc` |
+| `reindex.mjs` | Phase 4 辅助 / 独立调用 | `--target` `--dry-run` | 读写 `<target>/.axm/**/index.md` |
 
 ## _lib 共享模块
 
 | 模块 | 职责 | 关键导出 |
 |---|---|---|
-| `_lib/frontmatter.mjs` | YAML frontmatter 极简解析 | `parseFrontmatter(raw) → {data, body, hasFrontmatter}` |
-| `_lib/mdc-walker.mjs` | 递归 `.axm/` 并按位置分类文件 | `walkAxm(axmRoot, repoRoot) → McdFile[]`（kind ∈ index/universal/project/knowledge） |
+| `_lib/frontmatter.mjs` | axm metadata 极简解析 | `parseFrontmatter(raw) → {data, body, hasMeta}` |
+| `_lib/axm-walker.mjs` | 递归 `.axm/` 并按位置分类文件 | `walkAxm(axmRoot, repoRoot) → AxmFile[]`（kind ∈ index/universal/project/knowledge） |
 | `_lib/logger.mjs` | 统一输出格式 | `log.info/warn/error/plain`、`formatIssue(level, issue)` |
 
 ## 零依赖设计
 
-所有脚本**只用 Node 内置模块**。YAML 解析是手写的（约 130 行），只支持三套骨架的必要子集：
+所有脚本**只用 Node 内置模块**。axm metadata 解析是手写的（约 170 行），只支持三套骨架的必要子集：
 
 - 标量（string / date / boolean）
 - inline 列表 `[a, b]`
 - block 字符串列表（`related` / `code-refs`）
 - `entries` 对象列表
 
-**不支持**：嵌套 map / 多行字符串 / 锚点别名 / flow map / YAML 注释。这个边界由 `project/coding.mdc` 硬约束——扩展要求先改 `docs.mdc` 契约。
+**不支持**：嵌套 map / 多行字符串 / 锚点别名 / flow map / YAML 注释。这个边界由 `project/coding.md` 硬约束——扩展要求先改 `docs.md` 契约。
 
 ## 退出码约定
 
 | 退出码 | 含义 | 产生者 |
 |---|---|---|
 | `0` | 成功 / 零错误 | 全部脚本 |
-| `1` | 契约违反 / 致命错误（文件读写失败、frontmatter 解析失败） | 全部脚本 |
+| `1` | 契约违反 / 致命错误（文件读写失败、metadata 解析失败） | 全部脚本 |
 | `2` | 仅 WARN（无 ERROR） | `validate.mjs` 专用 |
 
 ## 关键调用链
@@ -79,7 +80,7 @@ scaffold.mjs
 
 ```
 validate.mjs
-  ├→ walkAxm(axmRoot, repoRoot)            # 收集所有 .mdc
+  ├→ walkAxm(axmRoot, repoRoot)            # 收集所有 .md
   ├→ for each file: checkFrontmatter(file) # 骨架字段 + 日期
   ├→ checkIndexSync(files)                  # entries ↔ 实际文件双向一致
   ├→ checkCodeRefs(files)                   # knowledge/code-refs 指向真实源码
@@ -91,7 +92,7 @@ validate.mjs
 
 ```
 reindex.mjs
-  └→ findIndexFiles(axmRoot)               # 所有 index.mdc
+  └→ findIndexFiles(axmRoot)               # 所有 index.md
   └→ for each idx:
       ├→ parseFrontmatter(raw).entries      # 已有 entries
       ├→ collectActual(dir)                 # 同目录实际子项

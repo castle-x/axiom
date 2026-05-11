@@ -1,11 +1,12 @@
----
+<!-- axm-meta
 status: active
-last-reviewed: {{date}}
-owner: {{owner}}
+last-reviewed: 2026-05-11
+owner: axm-skill
 applies-to: [universal]
 related:
-  - ./devloop.mdc
----
+  - ./devloop.md
+-->
+
 
 # 质量保障规范
 

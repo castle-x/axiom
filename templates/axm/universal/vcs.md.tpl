@@ -1,11 +1,11 @@
----
+<!-- axm-meta
 status: active
 last-reviewed: {{date}}
 owner: {{owner}}
 applies-to: [universal]
 related:
-  - ./devloop.mdc
----
+  - ./devloop.md
+-->
 
 # 版本控制规范
 

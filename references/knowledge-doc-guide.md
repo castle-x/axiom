@@ -1,6 +1,6 @@
 # knowledge/ 知识文档写作指南
 
-> 本文指导 AI 在 Phase 3 Author 阶段，根据项目源码现状，撰写 `.axm/knowledge/**/*.mdc` 知识文档。
+> 本文指导 AI 在 Phase 3 Author 阶段，根据项目源码现状，撰写 `.axm/knowledge/**/*.md` 知识文档。
 
 ## 核心定位
 
@@ -17,11 +17,11 @@
 
 ```
 knowledge/
-├── index.mdc                    # 骨架 C，列出所有子系统
+├── index.md                    # 骨架 C，列出所有子系统
 └── <system>/                    # 按子系统分目录
-    ├── index.mdc                # 骨架 C
-    ├── overview.mdc             # 骨架 B, depth=overview，≤150 行速查
-    └── <topic>.mdc              # 骨架 B, depth=deep，详细设计
+    ├── index.md                # 骨架 C
+    ├── overview.md             # 骨架 B, depth=overview，≤150 行速查
+    └── <topic>.md              # 骨架 B, depth=deep，详细设计
 ```
 
 ## 子系统（`<system>/`）怎么切
@@ -39,12 +39,12 @@ knowledge/
 - `utils/` — 按"工具函数"切（没有内聚逻辑）
 - `v1/` · `v2/` — 按版本切（规范不该有版本）
 
-## overview.mdc 写作模板
+## overview.md 写作模板
 
 **目标**：≤150 行，让 AI 读完能回答"这个子系统大概长啥样"。
 
 ```md
----
+<!-- axm-meta
 status: active
 last-reviewed: 2026-05-07
 owner: your-team
@@ -53,8 +53,8 @@ code-refs:
   - src/<module>/index.ts
   - src/<module>/types.ts
 related:
-  - ../../project/architecture.mdc
----
+  - ../../project/architecture.md
+-->
 
 # <子系统名> — 速查
 
@@ -80,8 +80,8 @@ related:
 
 ## 相关知识
 
-- [深度话题 1](./topic-a.mdc) — 何时读它
-- [深度话题 2](./topic-b.mdc) — 何时读它
+- [深度话题 1](./topic-a.md) — 何时读它
+- [深度话题 2](./topic-b.md) — 何时读它
 ```
 
 **千万不要**：
@@ -94,7 +94,7 @@ related:
 **目标**：无行数限制，讲清一个**具体设计决策**的背景、方案、权衡。
 
 ```md
----
+<!-- axm-meta
 status: active
 last-reviewed: 2026-05-07
 owner: your-team
@@ -103,8 +103,8 @@ code-refs:
   - src/<module>/specific-file.ts
   - src/<module>/related-file.ts
 related:
-  - ./overview.mdc
----
+  - ./overview.md
+-->
 
 # <具体话题>
 
@@ -155,7 +155,7 @@ related:
 ```md
 # 前端组件
 
-- 所有组件必须用 React Functional Component  ← 这是规范，放 project/coding.mdc
+- 所有组件必须用 React Functional Component  ← 这是规范，放 project/coding.md
 - Button 组件有 primary / secondary 两种变体  ← 这是事实，留在 knowledge
 ```
 
@@ -171,7 +171,7 @@ related:
 
 ### ❌ 没有 code-refs 就写了文档
 
-所有 `knowledge/**/*.mdc` 必须有 `code-refs`。如果一份文档不能给出任何源码锚点——它要么是规范（去 project/），要么是废话。
+所有 `knowledge/**/*.md` 必须有 `code-refs`。如果一份文档不能给出任何源码锚点——它要么是规范（去 project/），要么是废话。
 
 ## 写作检查清单
 

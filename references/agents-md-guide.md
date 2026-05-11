@@ -69,25 +69,25 @@
 **scaffold 已给出最小 4 条**（universal 的）：
 
 ```md
-| 每次任务开始 / 分级与流程   | `.axm/universal/devloop.mdc` |
-| 编码完成 / 提交前质量门禁   | `.axm/universal/quality.mdc` |
-| 提交 / 分支操作        | `.axm/universal/vcs.mdc`     |
-| 写 `.axm` 文档       | `.axm/universal/docs.mdc`    |
+| 每次任务开始 / 分级与流程   | `.axm/universal/devloop.md` |
+| 编码完成 / 提交前质量门禁   | `.axm/universal/quality.md` |
+| 提交 / 分支操作        | `.axm/universal/vcs.md`     |
+| 写 `.axm` 文档       | `.axm/universal/docs.md`    |
 ```
 
 **AI 需要追加的项目特有条目**（示例）：
 
 ```md
-| UI / 样式 / 交互            | `.axm/project/design.mdc` + `.axm/knowledge/frontend/overview.mdc` |
-| 前端重构 / 新增组件         | `.axm/project/architecture.mdc` + `.axm/project/coding.mdc`          |
-| 后端 API / 数据库           | `.axm/project/architecture.mdc` + `.axm/knowledge/backend/overview.mdc` |
-| Bug 修复                   | `.axm/universal/devloop.mdc` + `.axm/knowledge/<相关子系统>/overview.mdc` |
+| UI / 样式 / 交互            | `.axm/project/design.md` + `.axm/knowledge/frontend/overview.md` |
+| 前端重构 / 新增组件         | `.axm/project/architecture.md` + `.axm/project/coding.md`          |
+| 后端 API / 数据库           | `.axm/project/architecture.md` + `.axm/knowledge/backend/overview.md` |
+| Bug 修复                   | `.axm/universal/devloop.md` + `.axm/knowledge/<相关子系统>/overview.md` |
 ```
 
 **路由条目的写法**：
 
 - 左栏：**任务类型**（动宾短语，一眼看出场景），不要抽象词（❌"开发"、✅"新增组件"）
-- 右栏：**具体 `.mdc` 路径**，用 `+` 串多个
+- 右栏：**具体 `.md` 路径**，用 `+` 串多个
 - 粒度：5-15 条刚好。<5 条太泛，>15 条 AI 扫不过来
 
 **按项目类型推荐的最小路由集**：
@@ -95,54 +95,54 @@
 ### Monorepo 前端项目
 
 ```
-UI / 样式 / 组件         | project/design.mdc + knowledge/frontend/overview.mdc
-跨包 API / 新增包        | project/architecture.mdc（包边界部分）
-状态管理 / store         | knowledge/frontend/state.mdc
-路由                    | knowledge/frontend/overview.mdc
-Bug 修复                | universal/devloop.mdc
+UI / 样式 / 组件         | project/design.md + knowledge/frontend/overview.md
+跨包 API / 新增包        | project/architecture.md（包边界部分）
+状态管理 / store         | knowledge/frontend/state.md
+路由                    | knowledge/frontend/overview.md
+Bug 修复                | universal/devloop.md
 ```
 
 ### Tauri / Electron
 
 ```
-前端 UI                 | project/design.mdc + knowledge/frontend/overview.mdc
-Tauri IPC 命令          | project/architecture.mdc + knowledge/backend/overview.mdc
-Rust 后端 / 数据库      | knowledge/backend/overview.mdc
-新增 IPC 能力           | project/architecture.mdc（IPC 契约部分）
-Bug 修复                | universal/devloop.mdc
+前端 UI                 | project/design.md + knowledge/frontend/overview.md
+Tauri IPC 命令          | project/architecture.md + knowledge/backend/overview.md
+Rust 后端 / 数据库      | knowledge/backend/overview.md
+新增 IPC 能力           | project/architecture.md（IPC 契约部分）
+Bug 修复                | universal/devloop.md
 ```
 
 ### 后端 API 服务
 
 ```
-新增 API endpoint       | project/architecture.mdc + knowledge/api/overview.mdc
-数据库 Schema / 迁移    | knowledge/db/overview.mdc
-认证 / 鉴权             | knowledge/auth/overview.mdc
-第三方集成              | knowledge/integrations/overview.mdc
-Bug 修复                | universal/devloop.mdc
+新增 API endpoint       | project/architecture.md + knowledge/api/overview.md
+数据库 Schema / 迁移    | knowledge/db/overview.md
+认证 / 鉴权             | knowledge/auth/overview.md
+第三方集成              | knowledge/integrations/overview.md
+Bug 修复                | universal/devloop.md
 ```
 
 ### Python / 数据项目
 
 ```
-新增数据管道            | project/architecture.mdc + knowledge/pipelines/overview.mdc
-模型训练                | knowledge/ml/overview.mdc
-数据 Schema 变更        | knowledge/data-schema.mdc
-Bug 修复                | universal/devloop.mdc
+新增数据管道            | project/architecture.md + knowledge/pipelines/overview.md
+模型训练                | knowledge/ml/overview.md
+数据 Schema 变更        | knowledge/data-schema.md
+Bug 修复                | universal/devloop.md
 ```
 
 ## 写 Knowledge Index 前的最后一问
 
 每新增一条路由，自问：
 1. **这条任务真的会反复出现吗？** 如果一个项目生命周期里只发生 1-2 次，不值得硬编码
-2. **引用的 `.mdc` 真的写了吗？** 引用不存在的路径会被 validate.mjs 抓住
-3. **AI 顺着路由读完，能动手开工吗？** 如果读完还缺信息，补齐目标 `.mdc`
+2. **引用的 `.md` 真的写了吗？** 引用不存在的路径会被 validate.mjs 抓住
+3. **AI 顺着路由读完，能动手开工吗？** 如果读完还缺信息，补齐目标 `.md`
 
 ## 检查清单
 
 - [ ] Architecture 段 ≤ 60 行
 - [ ] 依赖方向用箭头明确画出
 - [ ] Knowledge Index 5-15 条
-- [ ] 每条路由引用的 `.mdc` 都已创建（validate.mjs 会验）
+- [ ] 每条路由引用的 `.md` 都已创建（validate.mjs 会验）
 - [ ] `.axm 召回声明` 和 `Coding Rules` 四段保持不动
 - [ ] 整个 AGENTS.md 不超过 200 行

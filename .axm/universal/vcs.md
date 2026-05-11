@@ -1,11 +1,12 @@
----
+<!-- axm-meta
 status: active
-last-reviewed: 2026-05-07
+last-reviewed: 2026-05-11
 owner: axm-skill
 applies-to: [universal]
 related:
-  - ./devloop.mdc
----
+  - ./devloop.md
+-->
+
 
 # 版本控制规范
 

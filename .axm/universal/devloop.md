@@ -1,18 +1,19 @@
----
+<!-- axm-meta
 status: active
-last-reviewed: 2026-05-07
+last-reviewed: 2026-05-11
 owner: axm-skill
 applies-to: [universal]
 related:
-  - ./vcs.mdc
-  - ./quality.mdc
----
+  - ./vcs.md
+  - ./quality.md
+-->
+
 
 # DEVLOOP 状态机
 
 每次任务的必经入口。不跳步，不省略。
 
-> **提交与版本控制**：DEVLOOP 定义"做什么、按什么顺序"，VCS 规范（`vcs.mdc`）定义"怎么提交、原子提交流程"。两者互补——DEVLOOP 的"交付"步骤对应 VCS 的"需求生命周期"（AI 研发 → AI 自测 → 人类确认 → 原子提交）。
+> **提交与版本控制**：DEVLOOP 定义"做什么、按什么顺序"，VCS 规范（`vcs.md`）定义"怎么提交、原子提交流程"。两者互补——DEVLOOP 的"交付"步骤对应 VCS 的"需求生命周期"（AI 研发 → AI 自测 → 人类确认 → 原子提交）。
 
 ## 状态流转
 

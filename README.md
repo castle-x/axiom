@@ -7,7 +7,7 @@ axm 是一个 [Anthropic Agent Skill](https://www.anthropic.com/engineering/equi
 1. **读懂**你的项目（扫 `package.json` / `Cargo.toml` / 目录结构）
 2. **释放**跨项目通用的规范文档（DEVLOOP、文档契约、质量门禁、VCS 规范共 4 份）
 3. **撰写**项目特有的架构、编码、知识文档
-4. **校验**文档契约（frontmatter 骨架、索引一致性、code-refs 真实性）
+4. **校验**文档契约（axm-meta 骨架、索引一致性、code-refs 真实性）
 5. **交付**一份可复用、可演化的 AI 上下文库
 
 ## 设计哲学
@@ -53,8 +53,8 @@ AI 会自动加载 `axm` skill、走完整 5 阶段 SOP：
 |---|---|---|
 | **Phase 1 Discover** | AI | 扫 `package.json` / `Cargo.toml` / 目录结构，输出项目画像给你确认 |
 | **Phase 2 Scaffold** | 脚本 | 释放 `.axm/universal/*` 4 份规范 + 索引骨架 + `AGENTS.md` 骨架 |
-| **Phase 3 Author** | AI | 基于项目画像写 `project/architecture.mdc` / `coding.mdc` / `knowledge/<system>/overview.mdc`，补全 `AGENTS.md` 的路由表 |
-| **Phase 4 Validate** | 脚本 | 机械校验 frontmatter / index 一致性 / code-refs 真实性；有 error 回 Phase 3 |
+| **Phase 3 Author** | AI | 基于项目画像写 `project/architecture.md` / `coding.md` / `knowledge/<system>/overview.md`，补全 `AGENTS.md` 的路由表 |
+| **Phase 4 Validate** | 脚本 | 机械校验 axm-meta / index 一致性 / code-refs 真实性；有 error 回 Phase 3 |
 | **Phase 5 Handoff** | AI | 输出完成清单 + 后续 TODO |
 
 完成后你的仓库会多出：
@@ -63,18 +63,18 @@ AI 会自动加载 `axm` skill、走完整 5 阶段 SOP：
 <your-project>/
 ├── AGENTS.md                    # AI 根入口（含 .axm 召回声明、Knowledge Index）
 └── .axm/
-    ├── index.mdc                # 一级分区索引
+    ├── index.md                # 一级分区索引
     ├── universal/               # 跨项目通用规范（4 份 + index）
-    │   ├── devloop.mdc          # DEVLOOP 状态机（意图 → 分级 → 分支 → 验证 → 交付）
-    │   ├── quality.mdc          # 测试策略 + 质量门禁
-    │   ├── docs.mdc             # 三套 frontmatter 骨架（A/B/C）契约
-    │   └── vcs.mdc              # 分支策略 + 提交规范
+    │   ├── devloop.md          # DEVLOOP 状态机（意图 → 分级 → 分支 → 验证 → 交付）
+    │   ├── quality.md          # 测试策略 + 质量门禁
+    │   ├── docs.md             # 三套 axm-meta 骨架（A/B/C）契约
+    │   └── vcs.md              # 分支策略 + 提交规范
     ├── project/                 # 项目特有规范（AI 按实际写）
-    │   ├── architecture.mdc     # 模块划分、依赖方向、硬约束
-    │   └── coding.mdc           # 工具链、语言风格
+    │   ├── architecture.md     # 模块划分、依赖方向、硬约束
+    │   └── coding.md           # 工具链、语言风格
     └── knowledge/               # 项目知识（AI 按实际写）
         └── <system>/
-            └── overview.mdc
+            └── overview.md
 ```
 
 ## 手动使用脚本
@@ -103,8 +103,8 @@ node /path/to/axm/scripts/validate.mjs --target=<项目根>
 退出码：`0` 全 PASS / `1` 有 error / `2` 仅 warn。
 
 四类检查：
-- Frontmatter 三套骨架（A/B/C）字段完整性 + 日期格式
-- 每份 `index.mdc` 的 `entries` 与同目录实际 `.mdc`/子目录双向一致
+- axm-meta 三套骨架（A/B/C）字段完整性 + 日期格式
+- 每份 `index.md` 的 `entries` 与同目录实际 `.md`/子目录双向一致
 - `knowledge/**` 的 `code-refs` 指向的源码真实存在
 - `AGENTS.md` 的 Knowledge Index 表引用的 `.axm` 路径可达
 
@@ -125,7 +125,7 @@ axm/
 ├── AGENTS.md                # 本仓库自身的 AI 入口（自用验证）
 ├── .axm/                    # 本仓库自身的 .axm/（axm 初始化了自己，见自用验证章节）
 ├── references/              # AI Phase 3 按需加载的写作指南
-│   ├── frontmatter-contracts.md
+│   ├── axm-meta-contracts.md
 │   ├── project-spec-guide.md
 │   ├── knowledge-doc-guide.md
 │   └── agents-md-guide.md
@@ -137,8 +137,8 @@ axm/
     ├── validate.mjs
     ├── reindex.mjs
     └── _lib/                # 共享模块
-        ├── frontmatter.mjs  # 极简 YAML 解析器（~130 行）
-        ├── mdc-walker.mjs
+        ├── axm-meta.mjs  # 极简 YAML 解析器（~130 行）
+        ├── axm-walker.mjs
         └── logger.mjs
 ```
 
@@ -160,13 +160,13 @@ node scripts/validate.mjs --target=.
 
 不会。scaffold 默认拒绝覆盖任何已存在文件，会在 manifest 里列出 "skipped"。你需要 `--force` 才会覆盖。
 
-### 为什么三套 frontmatter 骨架要搞得这么严格？
+### 为什么三套 axm-meta 骨架要搞得这么严格？
 
-因为 `.axm/` 的目标读者是 **AI**。AI 基于确定的字段做路由决策，契约越严、推理越稳。对人类维护来说，写 frontmatter 的成本远低于每次读文档都要猜"这个字段该填什么"的成本。
+因为 `.axm/` 的目标读者是 **AI**。AI 基于确定的字段做路由决策，契约越严、推理越稳。对人类维护来说，写 axm-meta 的成本远低于每次读文档都要猜"这个字段该填什么"的成本。
 
 ### universal 4 份规范能改吗？
 
-可以改，但**要改的是 `templates/axm/universal/*.mdc.tpl`**（skill 包本体），不是某个用户项目里的副本。理由：跨项目逐字一致是 universal 的核心价值。如果每个项目的 `devloop.mdc` 都长得不一样，AI 就得每次重新读。
+可以改，但**要改的是 `templates/axm/universal/*.md.tpl`**（skill 包本体），不是某个用户项目里的副本。理由：跨项目逐字一致是 universal 的核心价值。如果每个项目的 `devloop.md` 都长得不一样，AI 就得每次重新读。
 
 ### 脚本为什么要零 npm 依赖？
 

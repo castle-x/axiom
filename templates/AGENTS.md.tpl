@@ -101,9 +101,9 @@
 
 | 任务类型             | 读哪里                          |
 | ---------------- | ---------------------------- |
-| 每次任务开始 / 分级与流程   | `.axm/universal/devloop.mdc` |
-| 编码完成 / 提交前质量门禁   | `.axm/universal/quality.mdc` |
-| 提交 / 分支操作        | `.axm/universal/vcs.mdc`     |
-| 写 `.axm` 文档       | `.axm/universal/docs.mdc`    |
+| 每次任务开始 / 分级与流程   | `.axm/universal/devloop.md` |
+| 编码完成 / 提交前质量门禁   | `.axm/universal/quality.md` |
+| 提交 / 分支操作        | `.axm/universal/vcs.md`     |
+| 写 `.axm` 文档       | `.axm/universal/docs.md`    |
 
-`.axm/` 目录分区：`universal/`（通用流程）、`project/`（项目规范）、`knowledge/`（系统设计事实）。各目录有 `index.mdc` 总索引。
+`.axm/` 目录分区：`universal/`（通用流程）、`project/`（项目规范）、`knowledge/`（系统设计事实）。各目录有 `index.md` 总索引。

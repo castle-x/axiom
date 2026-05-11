@@ -26,11 +26,11 @@ axm 采用**扁平结构**（非 monorepo），git clone 到 `~/.claude/skills/a
 
 ### 模块划分
 
-- `SKILL.md` — Anthropic Agent Skills 标准入口（YAML frontmatter + 5 阶段 SOP）
+- `SKILL.md` — Anthropic Agent Skills 标准入口（YAML axm-meta + 5 阶段 SOP）
 - `references/*.md` — AI Phase 3 按需加载的写作指南（4 份）
 - `templates/**/*.tpl` — 脚本逐字释放的模板（含 `{{owner}}` / `{{date}}` / `{{project_name}}` 三个变量）
 - `scripts/*.mjs` — 零依赖 Node 脚本（scaffold / validate / reindex）
-- `scripts/_lib/*.mjs` — 脚本共享模块（frontmatter 解析器、walker、logger）
+- `scripts/_lib/*.mjs` — 脚本共享模块（axm-meta 解析器、walker、logger）
 - `.axm/` + `AGENTS.md` — 本仓库自身的 AI 上下文（自用验证）
 
 ### 设计哲学
@@ -44,7 +44,7 @@ axm 采用**扁平结构**（非 monorepo），git clone 到 `~/.claude/skills/a
 - **SKILL.md < 500 行**：超了拆到 `references/`
 - **扩展方向**：新能力优先走"改 SOP"或"改 references"，再考虑新增脚本；禁止让脚本做栈判断
 
-细节见 `.axm/project/architecture.mdc`。
+细节见 `.axm/project/architecture.md`。
 
 ## Coding Rules
 
@@ -121,14 +121,14 @@ axm 采用**扁平结构**（非 monorepo），git clone 到 `~/.claude/skills/a
 
 | 任务类型                      | 读哪里                                                                            |
 | ------------------------- | ------------------------------------------------------------------------------ |
-| 每次任务开始 / 分级与流程            | `.axm/universal/devloop.mdc`                                                   |
-| 编码完成 / 提交前质量门禁            | `.axm/universal/quality.mdc`                                                   |
-| 提交 / 分支操作                 | `.axm/universal/vcs.mdc`                                                       |
-| 写 `.axm` 文档 / 三套骨架契约      | `.axm/universal/docs.mdc`                                                      |
-| 修改脚本（scaffold/validate/reindex） | `.axm/project/coding.mdc` + `.axm/knowledge/scripts/overview.mdc`        |
-| 新增脚本能力 / 跨包边界             | `.axm/project/architecture.mdc`                                                |
-| 修改 SKILL.md 或 references  | `.axm/project/architecture.mdc` + `.axm/project/coding.mdc`（写作风格）             |
-| 修改 templates/             | `.axm/project/architecture.mdc`（模板变量约束）                                        |
-| Bug 修复                    | `.axm/universal/devloop.mdc` + `.axm/knowledge/scripts/overview.mdc`           |
+| 每次任务开始 / 分级与流程            | `.axm/universal/devloop.md`                                                   |
+| 编码完成 / 提交前质量门禁            | `.axm/universal/quality.md`                                                   |
+| 提交 / 分支操作                 | `.axm/universal/vcs.md`                                                       |
+| 写 `.axm` 文档 / 三套骨架契约      | `.axm/universal/docs.md`                                                      |
+| 修改脚本（scaffold/validate/reindex） | `.axm/project/coding.md` + `.axm/knowledge/scripts/overview.md`        |
+| 新增脚本能力 / 跨包边界             | `.axm/project/architecture.md`                                                |
+| 修改 SKILL.md 或 references  | `.axm/project/architecture.md` + `.axm/project/coding.md`（写作风格）             |
+| 修改 templates/             | `.axm/project/architecture.md`（模板变量约束）                                        |
+| Bug 修复                    | `.axm/universal/devloop.md` + `.axm/knowledge/scripts/overview.md`           |
 
-`.axm/` 目录分区：`universal/`（通用流程）、`project/`（本项目规范）、`knowledge/`（系统设计事实）。各目录有 `index.mdc` 总索引。
+`.axm/` 目录分区：`universal/`（通用流程）、`project/`（本项目规范）、`knowledge/`（系统设计事实）。各目录有 `index.md` 总索引。

@@ -1,5 +1,5 @@
 /**
- * 极简 YAML frontmatter 解析器（零依赖）。
+ * 极简 axm metadata 解析器（零依赖）。
  *
  * 仅覆盖 .axm 三套骨架（A/B/C）实际用到的 YAML 子集：
  *   - 标量字段：status / last-reviewed / owner / depth / applies-to(inline)
@@ -12,32 +12,76 @@
  */
 
 const FM_DELIM = "---";
+const META_START = "<!-- axm-meta";
+const META_END = "-->";
 
 /**
- * @param {string} raw 整个 .mdc 文件内容
- * @returns {{ data: Record<string, any>, body: string, hasFrontmatter: boolean }}
+ * @param {string} raw 整个 .md/.mdc 文件内容
+ * @returns {{ data: Record<string, any>, body: string, hasFrontmatter: boolean, hasMeta: boolean, metaKind?: 'comment' | 'frontmatter' }}
  */
 export function parseFrontmatter(raw) {
 	const lines = raw.split(/\r?\n/);
+	const meta = findMetadataBlock(lines);
+	if (meta?.kind === "comment") {
+		const metaLines = lines.slice(meta.start + 1, meta.end);
+		const bodyLines = lines.slice(meta.end + 1);
+		if (bodyLines[0] === "") bodyLines.shift();
+		const data = parseYamlSubset(metaLines);
+		return {
+			data,
+			body: bodyLines.join("\n"),
+			hasFrontmatter: true,
+			hasMeta: true,
+			metaKind: "comment",
+		};
+	}
 	if (lines[0]?.trim() !== FM_DELIM) {
-		return { data: {}, body: raw, hasFrontmatter: false };
+		return { data: {}, body: raw, hasFrontmatter: false, hasMeta: false };
 	}
-	let endIdx = -1;
-	for (let i = 1; i < lines.length; i++) {
-		if (lines[i].trim() === FM_DELIM) {
-			endIdx = i;
-			break;
-		}
-	}
-	if (endIdx === -1) {
+	if (!meta || meta.kind !== "frontmatter") {
 		throw new Error("frontmatter: 缺少结束分隔符 ---");
 	}
-	const fmLines = lines.slice(1, endIdx);
-	const bodyLines = lines.slice(endIdx + 1);
+	const fmLines = lines.slice(meta.start + 1, meta.end);
+	const bodyLines = lines.slice(meta.end + 1);
 	// body 去掉首个空行（保持原格式上与 frontmatter 的视觉分隔）
 	if (bodyLines[0] === "") bodyLines.shift();
 	const data = parseYamlSubset(fmLines);
-	return { data, body: bodyLines.join("\n"), hasFrontmatter: true };
+	return {
+		data,
+		body: bodyLines.join("\n"),
+		hasFrontmatter: true,
+		hasMeta: true,
+		metaKind: "frontmatter",
+	};
+}
+
+/**
+ * 找到文件顶部的 axm metadata 区块。
+ * 新格式优先：HTML 注释块，Markdown 预览中不可见。
+ * 旧格式兼容：YAML frontmatter。
+ *
+ * @param {string[]} lines
+ * @returns {{kind:'comment'|'frontmatter', start:number, end:number} | null}
+ */
+export function findMetadataBlock(lines) {
+	const first = lines[0]?.trim();
+	if (first === META_START) {
+		for (let i = 1; i < lines.length; i++) {
+			if (lines[i].trim() === META_END) {
+				return { kind: "comment", start: 0, end: i };
+			}
+		}
+		throw new Error("axm-meta: 缺少结束分隔符 -->");
+	}
+	if (first === FM_DELIM) {
+		for (let i = 1; i < lines.length; i++) {
+			if (lines[i].trim() === FM_DELIM) {
+				return { kind: "frontmatter", start: 0, end: i };
+			}
+		}
+		throw new Error("frontmatter: 缺少结束分隔符 ---");
+	}
+	return null;
 }
 
 /**

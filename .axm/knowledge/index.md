@@ -1,12 +1,13 @@
----
+<!-- axm-meta
 status: active
-last-reviewed: 2026-05-07
+last-reviewed: 2026-05-11
 owner: axm-skill
 entries:
   - path: scripts/
     title: 脚本子系统
     when-to-read: 修改 scaffold/validate/reindex 或 _lib 共享模块时
----
+-->
+
 
 # knowledge/ — 知识库
 

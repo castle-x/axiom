@@ -59,7 +59,7 @@ function collectTemplates(dir, rel = "") {
 /**
  * 将模板相对路径映射为目标仓库下的实际相对路径。
  *   templates/AGENTS.md.tpl     → AGENTS.md
- *   templates/axm/index.mdc.tpl → .axm/index.mdc
+ *   templates/axm/index.md.tpl  → .axm/index.md
  *   templates/axm/universal/... → .axm/universal/...
  */
 function mapToDestRel(tplRel) {

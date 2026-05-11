@@ -1,6 +1,6 @@
 # project/ 规范写作指南
 
-> 本文指导 AI 在 Phase 3 Author 阶段，根据 Phase 1 Discover 产出的项目画像，撰写 `.axm/project/*.mdc` 规范文档。
+> 本文指导 AI 在 Phase 3 Author 阶段，根据 Phase 1 Discover 产出的项目画像，撰写 `.axm/project/*.md` 规范文档。
 
 ## 核心原则
 
@@ -15,12 +15,12 @@
 
 | 文件 | 必要性 | 典型内容 |
 |---|---|---|
-| `architecture.mdc` | 几乎总是写 | 模块划分、依赖方向、IPC/API 契约、数据库 Schema |
-| `coding.mdc` | 有编码标准时写 | 语言风格、lint 规则、命名约定、路径别名 |
-| `design.mdc` | UI 项目写 | 设计系统（配色、字体、组件规范） |
-| `<domain>.mdc` | 大型领域模型才写 | 业务术语统一、跨模块约定 |
+| `architecture.md` | 几乎总是写 | 模块划分、依赖方向、IPC/API 契约、数据库 Schema |
+| `coding.md` | 有编码标准时写 | 语言风格、lint 规则、命名约定、路径别名 |
+| `design.md` | UI 项目写 | 设计系统（配色、字体、组件规范） |
+| `<domain>.md` | 大型领域模型才写 | 业务术语统一、跨模块约定 |
 
-## architecture.mdc 写作要点
+## architecture.md 写作要点
 
 按项目类型套下面的脚手架：
 
@@ -68,7 +68,7 @@
 - 依赖注入点
 - 横切关注点（日志、错误处理、缓存）
 
-## coding.mdc 写作要点
+## coding.md 写作要点
 
 按技术栈给出具体命令和配置锚点：
 
@@ -139,8 +139,8 @@
 
 ### 不要做的事
 
-- **不要写流程性规则**（那些属于 `universal/devloop.mdc`）
-- **不要写 git 规范**（那些属于 `universal/vcs.mdc`）
+- **不要写流程性规则**（那些属于 `universal/devloop.md`）
+- **不要写 git 规范**（那些属于 `universal/vcs.md`）
 - **不要写"进行中"内容**（迁移进度、TODO、任务清单——走根目录独立文档）
 - **不要复制粘贴同事的项目规范**——读完项目代码再写
 
@@ -152,7 +152,7 @@
 
 ## 写作检查清单
 
-写完一份 `project/*.mdc` 前自查：
+写完一份 `project/*.md` 前自查：
 
 - [ ] 这条规则换个项目还适用吗？如果是，该放 `universal/`
 - [ ] 这条规则只是描述现状，没说"该怎么做"？那该去 `knowledge/`

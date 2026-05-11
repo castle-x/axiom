@@ -1,11 +1,12 @@
----
+<!-- axm-meta
 status: active
-last-reviewed: 2026-05-07
+last-reviewed: 2026-05-11
 owner: axm-skill
 applies-to: [project:axm]
 related:
-  - ../knowledge/scripts/overview.mdc
----
+  - ../knowledge/scripts/overview.md
+-->
+
 
 # 架构约定
 
@@ -40,18 +41,18 @@ axiom/                      # skill 包本体，git clone 即用
 ### 脚本（scripts/）
 
 - **零 npm 依赖**：所有脚本只用 Node 内置模块（`node:fs` / `node:path` / `node:url`）。理由：用户 `git clone` 即用，无 `npm install` 步骤
-- **不做 AI 判断类工作**：脚本不猜项目技术栈、不写项目特有 `.mdc`、不改动正文。脚本只做"抄写 + 校验 + 同步"
+- **不做 AI 判断类工作**：脚本不猜项目技术栈、不写项目特有 `.md`、不改动正文。脚本只做"抄写 + 校验 + 同步"
 - **ESM 语法**：所有脚本文件扩展名 `.mjs`，用 `import` 而非 `require`
 
 ### 模板（templates/）
 
 - **只允许 `{{owner}}` / `{{date}}` / `{{project_name}}` 三个变量**。理由：变量越少，跨项目模板内容越稳定
-- **文件后缀必须 `.tpl`**：避免被误当作真实 `.mdc`（如被 IDE/grep 误扫）
+- **文件后缀必须 `.tpl`**：避免被误当作真实 `.md`（如被 IDE/grep 误扫）
 - **`templates/axm/` 子目录映射到目标仓库 `.axm/`**：由 `scaffold.mjs` 的 `mapToDestRel` 规则决定
 
 ### 写作指南（references/）
 
-- **不放规范条目**：这些是写作的"如何"，不是"什么"。`.axm/universal/docs.mdc` 才是契约真源
+- **不放规范条目**：这些是写作的"如何"，不是"什么"。`.axm/universal/docs.md` 才是契约真源
 - **每份文件独立**：AI 按 Phase 3 的 3.x 子步骤选择性读取
 
 ### SKILL.md
@@ -66,7 +67,7 @@ axiom/                      # skill 包本体，git clone 即用
 
 1. 能由"AI 读项目 + 已有脚本"组合完成？→ 不新增代码，只改 `SKILL.md` 的 SOP 或 `references/` 指南
 2. 是机械的、可泛化的校验/同步操作？→ 新增 `scripts/*.mjs`（仍零依赖）
-3. 是跨项目需要逐字一致的规则？→ 改 `templates/` 和 `.axm/universal/docs.mdc` 模板
-4. 是单项目场景？→ 不入 skill，留给用户在自己仓库的 `.axm/project/*.mdc` 写
+3. 是跨项目需要逐字一致的规则？→ 改 `templates/` 和 `.axm/universal/docs.md` 模板
+4. 是单项目场景？→ 不入 skill，留给用户在自己仓库的 `.axm/project/*.md` 写
 
 违反扩展原则的信号：脚本里出现 `if (isNodeProject)` 之类的栈判断；或者 `references/` 里出现"步骤 1 做 X，步骤 2 做 Y"的流程指令。一旦看到这类代码，说明分工错位，应上移到 `SKILL.md` 的 SOP。

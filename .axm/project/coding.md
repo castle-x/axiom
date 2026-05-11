@@ -1,11 +1,12 @@
----
+<!-- axm-meta
 status: active
-last-reviewed: 2026-05-07
+last-reviewed: 2026-05-11
 owner: axm-skill
 applies-to: [project:axm]
 related:
-  - ./architecture.mdc
----
+  - ./architecture.md
+-->
+
 
 # 编码规范
 
@@ -28,7 +29,7 @@ related:
   - `0` = 成功
   - `1` = 契约违反 / 致命错误
   - `2` = 仅警告（validate 专用）
-- **错误格式统一**：通过 `scripts/_lib/logger.mjs` 的 `formatIssue()` 输出，附 `docs.mdc §X` 章节引用
+- **错误格式统一**：通过 `scripts/_lib/logger.mjs` 的 `formatIssue()` 输出，附 `docs.md §X` 章节引用
 - **写文件原子化**：`reindex.mjs` 改文件必须 `.tmp + rename`，避免半成品
 - **默认不覆盖**：`scaffold.mjs` 对已存在目标文件必须拒绝覆盖，显式 `--force` 才允许
 
@@ -41,13 +42,13 @@ related:
 - block 字符串列表（`related` / `code-refs`）
 - `entries` 对象列表（每项含 `path` / `title` / `when-to-read`）
 
-**禁止扩展**支持嵌套 map / 多行字符串 / 锚点别名 / flow map / YAML 注释等特性。如果 `.axm` 文档未来需要这些，先改 `docs.mdc` 契约再改解析器。
+**禁止扩展**支持嵌套 map / 多行字符串 / 锚点别名 / flow map / YAML 注释等特性。如果 `.axm` 文档未来需要这些，先改 `docs.md` 契约再改解析器。
 
 ## 模板（templates/*.tpl）
 
 - **变量只能 3 个**：`{{owner}}` / `{{date}}` / `{{project_name}}`
 - **不引入条件块**（`{{#if xxx}}`）或循环块（`{{#each xxx}}`）——这会让模板引擎复杂度爆炸，改由 AI 在 Phase 3 手写项目特有内容
-- **`.tpl` 后缀**：确保 IDE 不把它们当真实 `.mdc` 渲染、不被 validate 扫到
+- **`.tpl` 后缀**：确保 IDE 不把它们当真实 `.md` 渲染、不被 validate 扫到
 
 ## 写作风格
 
@@ -57,9 +58,9 @@ related:
 - **解释 why**：不堆 ALL-CAPS MUST；每条约束说明"不这样会怎样"
 - **< 500 行** SKILL.md，超了就拆 references
 
-### .axm/**/*.mdc
+### .axm/**/*.md
 
-- 一律遵循 `.axm/universal/docs.mdc` 的三套 frontmatter 骨架
+- 一律遵循 `.axm/universal/docs.md` 的三套 frontmatter 骨架
 - 每份文档回答**一个**问题
 - 结构化优先：表格 / 列表 / 代码块
 - 规范写"应该怎么做"，知识写"是什么、为什么"
@@ -79,4 +80,4 @@ related:
 2. 修改模板后：同上，看渲染结果是否有未替换的 `{{` 残留
 3. 修改 `.axm/` 本仓库文档后：在仓库根跑 `node scripts/validate.mjs --target=.`
 
-**特别提醒**：`scripts/_lib/frontmatter.mjs` 的任何改动都要用多份 `.axm/**/*.mdc` 实际回归（本仓库的 `.axm/` 就是回归套件）。
+**特别提醒**：`scripts/_lib/frontmatter.mjs` 的任何改动都要用多份 `.axm/**/*.md` 实际回归（本仓库的 `.axm/` 就是回归套件）。

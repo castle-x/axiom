@@ -1,6 +1,6 @@
----
+<!-- axm-meta
 status: active
-last-reviewed: 2026-05-07
+last-reviewed: 2026-05-11
 owner: axm-skill
 entries:
   - path: universal/
@@ -12,7 +12,8 @@ entries:
   - path: knowledge/
     title: 知识库
     when-to-read: 理解系统设计、模块结构、设计决策
----
+-->
+
 
 # .axm — AI 开发上下文入口
 
@@ -28,7 +29,7 @@ entries:
 
 ## 文档规则
 
-所有 `.axm/**/*.mdc` 必须遵循 `universal/docs.mdc` 定义的三套 Frontmatter 骨架（A 规范 / B 知识 / C 索引）与命名/索引/审查规则。
+所有 `.axm/**/*.md` 必须遵循 `universal/docs.md` 定义的三套 Frontmatter 骨架（A 规范 / B 知识 / C 索引）与命名/索引/审查规则。
 
 ## 访问链路
 
@@ -36,7 +37,7 @@ AI 查找规范或知识的标准路径：
 
 ```
 AGENTS.md（根入口·Knowledge Index）
-    └→ .axm/index.mdc（本文件·一级分区）
-        └→ <dir>/index.mdc（子分区索引）
-            └→ 具体 .mdc 文件
+    └→ .axm/index.md（本文件·一级分区）
+        └→ <dir>/index.md（子分区索引）
+            └→ 具体 .md 文件
 ```

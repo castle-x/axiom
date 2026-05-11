@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
- * axm reindex — index.mdc 同步器
+ * axm reindex — index.md 同步器
  *
  * 用法：
  *   node scripts/reindex.mjs [--target=.] [--dry-run]
  *
  * 行为：
- *   1. 扫 .axm/ 每个含 index.mdc 的目录
- *   2. 列出该目录的实际子项（.mdc 文件 + 子目录；排除自身 index.mdc）
- *   3. 与 index.mdc 现有 entries 合并：
+ *   1. 扫 .axm/ 每个含 index.md / index.mdc 的目录
+ *   2. 列出该目录的实际子项（.md/.mdc 文件 + 子目录；排除自身 index）
+ *   3. 与 index 文档现有 entries 合并：
  *      - 保留已有 entry 的 title / when-to-read
  *      - 新增孤儿子项：title = 子项路径，when-to-read = "TODO: 补充触发条件"
  *      - 删除已失效（实际不存在的）entry
@@ -16,14 +16,14 @@
  *   5. 原子写入（.tmp + rename），--dry-run 只打印 diff 不落盘
  *
  * 约束（刻意为之，保持简单）：
- *   - 只改 entries 字段；其他 frontmatter 字段（含 last-reviewed）保持原样
+ *   - 只改 entries 字段；其他 metadata 字段（含 last-reviewed）保持原样
  *   - 不触碰正文；索引链路的"人文描述"由人工维护
- *   - 解析失败的 index.mdc 跳过并报错，不做自动修复
+ *   - 解析失败的 index 文档跳过并报错，不做自动修复
  */
 
 import fs from "node:fs";
 import path from "node:path";
-import { parseFrontmatter } from "./_lib/frontmatter.mjs";
+import { findMetadataBlock, parseFrontmatter } from "./_lib/frontmatter.mjs";
 import { log } from "./_lib/logger.mjs";
 
 function parseArgs(argv) {
@@ -36,14 +36,14 @@ function parseArgs(argv) {
 	return args;
 }
 
-/** 扫 .axm 下所有 index.mdc 的绝对路径 */
+/** 扫 .axm 下所有 index.md / index.mdc 的绝对路径 */
 function findIndexFiles(axmRoot) {
 	const out = [];
 	function walk(dir) {
 		for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
 			const full = path.join(dir, e.name);
 			if (e.isDirectory()) walk(full);
-			else if (e.isFile() && e.name === "index.mdc") out.push(full);
+			else if (e.isFile() && (e.name === "index.md" || e.name === "index.mdc")) out.push(full);
 		}
 	}
 	if (fs.existsSync(axmRoot)) walk(axmRoot);
@@ -55,7 +55,7 @@ function collectActual(dir) {
 	const out = [];
 	for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
 		if (e.isDirectory()) out.push(`${e.name}/`);
-		else if (e.isFile() && e.name.endsWith(".mdc") && e.name !== "index.mdc") out.push(e.name);
+		else if (e.isFile() && isAxmDocName(e.name) && !isIndexDocName(e.name)) out.push(e.name);
 	}
 	return out;
 }
@@ -97,7 +97,7 @@ function mergeEntries(existing, actualPaths) {
 }
 
 /**
- * 用原文件的 frontmatter 区块做**最小化替换**：只替换 entries 块，其余字段与正文一字不动。
+ * 用原文件的 metadata 区块做**最小化替换**：只替换 entries 块，其余字段与正文一字不动。
  * 回避了"回写 YAML"的复杂性。
  * @param {string} raw 原文件内容
  * @param {Array} newEntries
@@ -105,28 +105,21 @@ function mergeEntries(existing, actualPaths) {
  */
 function rewriteEntries(raw, newEntries) {
 	const lines = raw.split(/\r?\n/);
-	if (lines[0]?.trim() !== "---") throw new Error("文件缺少 frontmatter");
-	let endIdx = -1;
-	for (let i = 1; i < lines.length; i++) {
-		if (lines[i].trim() === "---") {
-			endIdx = i;
-			break;
-		}
-	}
-	if (endIdx === -1) throw new Error("frontmatter 缺少结束 ---");
+	const meta = findMetadataBlock(lines);
+	if (!meta) throw new Error("文件缺少 axm metadata");
 
 	// 找到 entries: 开始行
 	let entriesStart = -1;
-	for (let i = 1; i < endIdx; i++) {
+	for (let i = meta.start + 1; i < meta.end; i++) {
 		if (/^entries:\s*(\[\s*\])?\s*$/.test(lines[i]) || /^entries:\s*$/.test(lines[i])) {
 			entriesStart = i;
 			break;
 		}
 	}
-	// entries 块的结尾：下一个顶层键（不以空格开头）或 frontmatter 结束
-	let entriesEnd = endIdx;
+	// entries 块的结尾：下一个顶层键（不以空格开头）或 metadata 结束
+	let entriesEnd = meta.end;
 	if (entriesStart !== -1) {
-		for (let i = entriesStart + 1; i < endIdx; i++) {
+		for (let i = entriesStart + 1; i < meta.end; i++) {
 			if (/^[a-zA-Z]/.test(lines[i])) {
 				entriesEnd = i;
 				break;
@@ -138,12 +131,20 @@ function rewriteEntries(raw, newEntries) {
 
 	let out;
 	if (entriesStart === -1) {
-		// 原文件没有 entries：插到 frontmatter 末尾
-		out = [...lines.slice(0, endIdx), ...newEntriesLines, ...lines.slice(endIdx)];
+		// 原文件没有 entries：插到 metadata 末尾
+		out = [...lines.slice(0, meta.end), ...newEntriesLines, ...lines.slice(meta.end)];
 	} else {
 		out = [...lines.slice(0, entriesStart), ...newEntriesLines, ...lines.slice(entriesEnd)];
 	}
 	return out.join("\n");
+}
+
+function isAxmDocName(name) {
+	return name.endsWith(".md") || name.endsWith(".mdc");
+}
+
+function isIndexDocName(name) {
+	return name === "index.md" || name === "index.mdc";
 }
 
 function renderEntries(entries) {
@@ -190,7 +191,7 @@ function main() {
 	}
 
 	const indexes = findIndexFiles(axmRoot);
-	log.info(`found ${indexes.length} index.mdc`);
+	log.info(`found ${indexes.length} index docs`);
 	let changed = 0;
 	let failed = 0;
 
@@ -208,7 +209,7 @@ function main() {
 		try {
 			parsed = parseFrontmatter(raw);
 		} catch (e) {
-			log.error(`frontmatter 解析失败 ${relPath}: ${e.message}（跳过，不自动修复）`);
+			log.error(`axm metadata 解析失败 ${relPath}: ${e.message}（跳过，不自动修复）`);
 			failed++;
 			continue;
 		}

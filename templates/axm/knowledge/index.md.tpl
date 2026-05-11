@@ -1,20 +1,20 @@
----
+<!-- axm-meta
 status: active
 last-reviewed: {{date}}
 owner: {{owner}}
 entries: []
----
+-->
 
 # knowledge/ — 知识库
 
-描述本项目各子系统"是什么"和"为什么这么设计"。采用**两层结构**：每个子系统一个目录，包含 `overview.mdc`（速查）+ 若干深度文档。
+描述本项目各子系统"是什么"和"为什么这么设计"。采用**两层结构**：每个子系统一个目录，包含 `overview.md`（速查）+ 若干深度文档。
 
 > **本 index 的 `entries` 由 AI 在 Phase 3 Author 阶段按项目实际子系统填充**，填充后可运行 `node scripts/reindex.mjs` 自动同步。
 
 ## 访问约定
 
-1. **AI 初读**：优先读 `<system>/overview.mdc`（≤150 行速查）
-2. **需要深度细节**：进入 `<system>/<topic>.mdc` 阅读
+1. **AI 初读**：优先读 `<system>/overview.md`（≤150 行速查）
+2. **需要深度细节**：进入 `<system>/<topic>.md` 阅读
 3. **频繁访问的事实**：都在 overview 里列出（模块清单、API 命令、DB 表、Store 清单等）
 
 ## 维护规则
