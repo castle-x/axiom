@@ -66,13 +66,14 @@
 
 **职责**：把"**任务类型 → 读哪些文档**"的映射硬编码。这是整个 `.axm/` 体系的**核心价值**——AI 不用盲目全扫，按任务直接定位需读文档。
 
-**scaffold 已给出最小 4 条**（universal 的）：
+**scaffold 已给出最小 5 条**（universal + progress 入口）：
 
 ```md
 | 每次任务开始 / 分级与流程   | `.axm/universal/devloop.md` |
 | 编码完成 / 提交前质量门禁   | `.axm/universal/quality.md` |
 | 提交 / 分支操作        | `.axm/universal/vcs.md`     |
 | 写 `.axm` 文档       | `.axm/universal/docs.md`    |
+| roadmap / spec / 开发进度 | `.axm/progress/index.md`    |
 ```
 
 **AI 需要追加的项目特有条目**（示例）：
@@ -82,6 +83,7 @@
 | 前端重构 / 新增组件         | `.axm/project/architecture.md` + `.axm/project/coding.md`          |
 | 后端 API / 数据库           | `.axm/project/architecture.md` + `.axm/knowledge/backend/overview.md` |
 | Bug 修复                   | `.axm/universal/devloop.md` + `.axm/knowledge/<相关子系统>/overview.md` |
+| 阶段计划 / 验收标准        | `.axm/progress/<initiative>/roadmap.md` + `.axm/progress/<initiative>/specs/<spec>.md` |
 ```
 
 **路由条目的写法**：

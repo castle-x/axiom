@@ -11,6 +11,7 @@ description: |
   - 用户要配置或补全 AGENTS.md（Knowledge Index / Architecture 段）
   - 用户要校验 .axm axm-meta 契约（validate.mjs）
   - 用户要同步 index 索引（reindex / reindex.mjs / index.md 没更新）
+  - 用户要管理 roadmap / spec / 开发进度 / 阶段验收，并希望放入 axm
   - 项目没有 .axm 目录或 AGENTS.md，需要新建
 
   核心流程：5 阶段 SOP（AI 扫项目 → 脚本 scaffold 通用规范 → AI 写项目特有文档 → 脚本校验契约 → 交付）。也可单独跑 validate.mjs 或 reindex.mjs。
@@ -18,7 +19,7 @@ description: |
 
 # axm — Agent 上下文初始化
 
-`.axm/` 是一套**给 AI 看的**项目上下文目录规范：用三类有契约的文档（规范 A / 知识 B / 索引 C）承载"这个项目怎么做、是什么、去哪读"，配合根目录 `AGENTS.md` 的 Knowledge Index 路由表，让 AI 接手任意任务前能快速定位需要的上下文。
+`.axm/` 是一套**给 AI 看的**项目上下文目录规范：用四类有契约的文档（规范 A / 知识 B / 索引 C / 进度 D）承载"这个项目怎么做、是什么、去哪读、做到哪里"，配合根目录 `AGENTS.md` 的 Knowledge Index 路由表，让 AI 接手任意任务前能快速定位需要的上下文。
 
 本 skill 的核心分工是"**AI 判断 + 脚本机械**"：AI 读项目源码、理解技术栈、撰写项目特有的架构与知识文档；脚本释放跨项目通用的规范（4 份 universal 文件）、校验 axm-meta 契约、同步 index 索引。
 
@@ -28,10 +29,11 @@ Skill 目录布局：
 axm/
 ├── SKILL.md              # 本文件
 ├── references/           # AI 按需读的写作指南
-│   ├── axm-meta-contracts.md   # 三套骨架速查
+│   ├── axm-meta-contracts.md   # 四套骨架速查
 │   ├── project-spec-guide.md      # 写 project/*.md 的要点
 │   ├── knowledge-doc-guide.md     # 写 knowledge/**/*.md 的要点
-│   └── agents-md-guide.md         # 定制 AGENTS.md 的要点
+│   ├── agents-md-guide.md         # 定制 AGENTS.md 的要点
+│   └── progress-doc-guide.md      # 写 progress/**/*.md 的要点
 ├── templates/            # 脚本逐字释放的模板（.tpl 后缀）
 │   ├── AGENTS.md.tpl
 │   └── axm/              # 释放到目标仓库的 .axm/
@@ -109,12 +111,13 @@ node <skill-path>/scripts/scaffold.mjs \
 
 脚本会输出 manifest（created / skipped / overwritten 三类）。**把 manifest 原样转述给用户**，让他们知道哪些被跳过了。
 
-**产出**：目标仓库多出以下文件（9 个）：
+**产出**：目标仓库多出以下文件（10 个）：
 - `AGENTS.md`
 - `.axm/index.md`
 - `.axm/universal/{index,docs,devloop,quality,vcs}.md`
 - `.axm/project/index.md`（空 entries）
 - `.axm/knowledge/index.md`（空 entries）
+- `.axm/progress/index.md`（空 entries）
 
 ### Phase 3 Author（AI 执行）
 
@@ -167,6 +170,21 @@ deep 文档（具体话题）**本阶段不写**，只建目录和 overview；�
 
 `project/index.md` 和 `knowledge/index.md` 的 `entries` 需要根据刚写的文件填充。可以手动写，也可以跳过这步——Phase 4 完成后让 `reindex.mjs` 自动补。
 
+#### 3.6 可选：建立 progress 开发进度
+
+当用户明确要管理 roadmap / spec / 阶段验收时，先读 `<skill-path>/references/progress-doc-guide.md`，再在 `.axm/progress/<initiative>/` 下创建：
+
+```
+progress/<initiative>/
+├── index.md
+├── roadmap.md
+└── specs/
+    ├── index.md
+    └── <spec>.md
+```
+
+roadmap 记录较大路线图和事实进度；spec 记录某次阶段开发的细节和验收标准。验收标准必须分为 **AI 自动验收** 与 **人类验收**。spec 的生成方法不限，可来自 Superpowers、OpenSpec 或人工讨论；axm 只约束最终文档位置与骨架 D。
+
 ### Phase 4 Validate（脚本执行）
 
 **目标**：机械校验 Phase 2+3 的产物符合 `docs.md` 契约。
@@ -205,7 +223,7 @@ node <skill-path>/scripts/validate.mjs --target=<项目根绝对路径>
 ### 已创建（机械释放）
 - AGENTS.md
 - .axm/universal/{docs,devloop,quality,vcs}.md
-- .axm/{index,universal/index,project/index,knowledge/index}.md
+- .axm/{index,universal/index,project/index,knowledge/index,progress/index}.md
 
 ### 已撰写（项目特有）
 - .axm/project/architecture.md — <一句话概括>

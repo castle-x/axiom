@@ -1,6 +1,6 @@
 <!-- axm-meta
 status: active
-last-reviewed: 2026-05-11
+last-reviewed: 2026-05-12
 owner: axm-skill
 depth: overview
 code-refs:
@@ -41,12 +41,12 @@ AI 通过 `node scripts/<name>.mjs <args>` 调用，不直接读取脚本源码�
 | 模块 | 职责 | 关键导出 |
 |---|---|---|
 | `_lib/frontmatter.mjs` | axm metadata 极简解析 | `parseFrontmatter(raw) → {data, body, hasMeta}` |
-| `_lib/axm-walker.mjs` | 递归 `.axm/` 并按位置分类文件 | `walkAxm(axmRoot, repoRoot) → AxmFile[]`（kind ∈ index/universal/project/knowledge） |
+| `_lib/axm-walker.mjs` | 递归 `.axm/` 并按位置分类文件 | `walkAxm(axmRoot, repoRoot) → AxmFile[]`（kind ∈ index/universal/project/knowledge/progress） |
 | `_lib/logger.mjs` | 统一输出格式 | `log.info/warn/error/plain`、`formatIssue(level, issue)` |
 
 ## 零依赖设计
 
-所有脚本**只用 Node 内置模块**。axm metadata 解析是手写的（约 170 行），只支持三套骨架的必要子集：
+所有脚本**只用 Node 内置模块**。axm metadata 解析是手写的（约 170 行），只支持四套骨架的必要子集：
 
 - 标量（string / date / boolean）
 - inline 列表 `[a, b]`

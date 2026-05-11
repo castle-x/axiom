@@ -1,6 +1,6 @@
 <!-- axm-meta
 status: active
-last-reviewed: 2026-05-11
+last-reviewed: 2026-05-12
 owner: axm-skill
 entries:
   - path: architecture.md
@@ -14,7 +14,7 @@ entries:
 
 # project/ — 项目规范（axm）
 
-绑定 axm skill 包的工程规范。所有文件使用 Frontmatter 骨架 A（`applies-to: [project:axm]`）。
+绑定 axm skill 包的工程规范。所有文件使用 axm metadata 骨架 A（`applies-to: [project:axm]`）。
 
 ## 索引
 

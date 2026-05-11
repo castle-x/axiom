@@ -1,6 +1,6 @@
 <!-- axm-meta
 status: active
-last-reviewed: 2026-05-11
+last-reviewed: 2026-05-12
 owner: axm-skill
 applies-to: [project:axm]
 related:
@@ -35,7 +35,7 @@ related:
 
 ## YAML 解析（scripts/_lib/frontmatter.mjs）
 
-该解析器**刻意不全**——只覆盖三套骨架（A/B/C）实际用到的 YAML 子集：
+该解析器**刻意不全**——只覆盖四套骨架（A/B/C/D）实际用到的 YAML 子集：
 
 - 标量（string / date / boolean）
 - inline 列表 `[a, b]`
@@ -60,7 +60,7 @@ related:
 
 ### .axm/**/*.md
 
-- 一律遵循 `.axm/universal/docs.md` 的三套 frontmatter 骨架
+- 一律遵循 `.axm/universal/docs.md` 的四套 axm metadata 骨架
 - 每份文档回答**一个**问题
 - 结构化优先：表格 / 列表 / 代码块
 - 规范写"应该怎么做"，知识写"是什么、为什么"

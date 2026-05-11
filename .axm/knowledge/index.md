@@ -1,6 +1,6 @@
 <!-- axm-meta
 status: active
-last-reviewed: 2026-05-11
+last-reviewed: 2026-05-12
 owner: axm-skill
 entries:
   - path: scripts/
@@ -17,4 +17,4 @@ entries:
 
 | 目录 | 覆盖范围 |
 |---|---|
-| `scripts/` | 三个主入口脚本（scaffold / validate / reindex）与共享 `_lib/`（frontmatter 解析器、walker、logger） |
+| `scripts/` | 三个主入口脚本（scaffold / validate / reindex）与共享 `_lib/`（axm metadata 解析器、walker、logger） |

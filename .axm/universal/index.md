@@ -1,6 +1,6 @@
 <!-- axm-meta
 status: active
-last-reviewed: 2026-05-11
+last-reviewed: 2026-05-12
 owner: axm-skill
 entries:
   - path: devloop.md
@@ -20,7 +20,7 @@ entries:
 
 # universal/ — 通用规范
 
-跨项目通用的工程规范，内容换一个项目仍然适用。所有文件使用 Frontmatter 骨架 A（`applies-to: [universal]`）。
+跨项目通用的工程规范，内容换一个项目仍然适用。所有文件使用 axm metadata 骨架 A（`applies-to: [universal]`）。
 
 ## 索引
 
@@ -28,5 +28,5 @@ entries:
 |---|---|---|
 | `devloop.md` | DEVLOOP 状态机（意图识别→分级→分支→验证→交付） | 每次任务开始时 |
 | `quality.md` | 测试策略、质量门禁、回归防护 | 编码完成/提交前 |
-| `docs.md` | 文档规范（Frontmatter 骨架 / 命名 / 索引 / 审查） | 产出文档时 |
+| `docs.md` | 文档规范（axm metadata 骨架 / 命名 / 索引 / 审查） | 产出文档时 |
 | `vcs.md` | 版本控制（分支策略 / 原子提交 / 需求生命周期） | 代码变更时 |

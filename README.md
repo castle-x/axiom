@@ -7,8 +7,9 @@ axm 是一个 [Anthropic Agent Skill](https://www.anthropic.com/engineering/equi
 1. **读懂**你的项目（扫 `package.json` / `Cargo.toml` / 目录结构）
 2. **释放**跨项目通用的规范文档（DEVLOOP、文档契约、质量门禁、VCS 规范共 4 份）
 3. **撰写**项目特有的架构、编码、知识文档
-4. **校验**文档契约（axm-meta 骨架、索引一致性、code-refs 真实性）
-5. **交付**一份可复用、可演化的 AI 上下文库
+4. **管理**阶段性开发进度（roadmap、阶段 spec、验收状态）
+5. **校验**文档契约（axm-meta 骨架、索引一致性、code-refs 真实性）
+6. **交付**一份可复用、可演化的 AI 上下文库
 
 ## 设计哲学
 
@@ -67,14 +68,19 @@ AI 会自动加载 `axm` skill、走完整 5 阶段 SOP：
     ├── universal/               # 跨项目通用规范（4 份 + index）
     │   ├── devloop.md          # DEVLOOP 状态机（意图 → 分级 → 分支 → 验证 → 交付）
     │   ├── quality.md          # 测试策略 + 质量门禁
-    │   ├── docs.md             # 三套 axm-meta 骨架（A/B/C）契约
+    │   ├── docs.md             # 四套 axm-meta 骨架（A/B/C/D）契约
     │   └── vcs.md              # 分支策略 + 提交规范
     ├── project/                 # 项目特有规范（AI 按实际写）
     │   ├── architecture.md     # 模块划分、依赖方向、硬约束
     │   └── coding.md           # 工具链、语言风格
-    └── knowledge/               # 项目知识（AI 按实际写）
-        └── <system>/
-            └── overview.md
+    ├── knowledge/               # 项目知识（AI 按实际写）
+    │   └── <system>/
+    │       └── overview.md
+    └── progress/                # 开发进度（roadmap、spec、验收状态）
+        └── <initiative>/
+            ├── roadmap.md
+            └── specs/
+                └── <spec>.md
 ```
 
 ## 手动使用脚本
@@ -103,7 +109,7 @@ node /path/to/axm/scripts/validate.mjs --target=<项目根>
 退出码：`0` 全 PASS / `1` 有 error / `2` 仅 warn。
 
 四类检查：
-- axm-meta 三套骨架（A/B/C）字段完整性 + 日期格式
+- axm-meta 四套骨架（A/B/C/D）字段完整性 + 日期格式
 - 每份 `index.md` 的 `entries` 与同目录实际 `.md`/子目录双向一致
 - `knowledge/**` 的 `code-refs` 指向的源码真实存在
 - `AGENTS.md` 的 Knowledge Index 表引用的 `.axm` 路径可达
@@ -128,6 +134,7 @@ axm/
 │   ├── axm-meta-contracts.md
 │   ├── project-spec-guide.md
 │   ├── knowledge-doc-guide.md
+│   ├── progress-doc-guide.md
 │   └── agents-md-guide.md
 ├── templates/               # 脚本逐字释放的 .tpl 模板
 │   ├── AGENTS.md.tpl
@@ -137,7 +144,7 @@ axm/
     ├── validate.mjs
     ├── reindex.mjs
     └── _lib/                # 共享模块
-        ├── axm-meta.mjs  # 极简 YAML 解析器（~130 行）
+        ├── frontmatter.mjs  # 极简 axm metadata 解析器
         ├── axm-walker.mjs
         └── logger.mjs
 ```
@@ -160,7 +167,7 @@ node scripts/validate.mjs --target=.
 
 不会。scaffold 默认拒绝覆盖任何已存在文件，会在 manifest 里列出 "skipped"。你需要 `--force` 才会覆盖。
 
-### 为什么三套 axm-meta 骨架要搞得这么严格？
+### 为什么四套 axm-meta 骨架要搞得这么严格？
 
 因为 `.axm/` 的目标读者是 **AI**。AI 基于确定的字段做路由决策，契约越严、推理越稳。对人类维护来说，写 axm-meta 的成本远低于每次读文档都要猜"这个字段该填什么"的成本。
 

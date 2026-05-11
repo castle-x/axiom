@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 /**
- * @typedef {'index' | 'universal' | 'project' | 'knowledge'} AxmKind
+ * @typedef {'index' | 'universal' | 'project' | 'knowledge' | 'progress'} AxmKind
  * @typedef {{ absPath: string, relPath: string, kind: AxmKind }} AxmFile
  */
 
@@ -37,6 +37,7 @@ function classify(relPath) {
 	if (top === "universal") return "universal";
 	if (top === "project") return "project";
 	if (top === "knowledge") return "knowledge";
+	if (top === "progress") return "progress";
 	throw new Error(`walker: 无法分类文件 ${relPath}`);
 }
 

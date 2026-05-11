@@ -1,6 +1,6 @@
 <!-- axm-meta
 status: active
-last-reviewed: 2026-05-11
+last-reviewed: 2026-05-12
 owner: axm-skill
 applies-to: [project:axm]
 related:
@@ -20,7 +20,7 @@ axiom/                      # skill 包本体，git clone 即用
 ├── README.md               # 给人读的文档
 ├── AGENTS.md               # 本仓库自身的 AI 入口（吃狗粮）
 ├── .axm/                   # 本仓库自身的 .axm/（吃狗粮）
-├── references/             # AI Phase 3 按需读的写作指南（4 份 .md）
+├── references/             # AI Phase 3 按需读的写作指南（5 份 .md）
 ├── templates/              # 脚本逐字释放的 .tpl 模板
 └── scripts/                # 零依赖 Node 脚本
 ```
@@ -59,7 +59,7 @@ axiom/                      # skill 包本体，git clone 即用
 
 - **< 500 行**：超过就拆到 `references/`（Anthropic skill 规范建议）
 - **YAML frontmatter 只含 name + description**：遵循 Anthropic Agent Skills 开放标准
-- **description 覆盖三大场景关键词**：初始化 `.axm`、校验 frontmatter、同步 index；"稍微 pushy" 抵抗 AI 的 undertrigger 倾向
+- **description 覆盖核心场景关键词**：初始化 `.axm`、校验 axm-meta、同步 index、管理 progress；"稍微 pushy" 抵抗 AI 的 undertrigger 倾向
 
 ## 扩展原则
 

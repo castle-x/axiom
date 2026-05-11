@@ -2,13 +2,14 @@
 
 > 本文是 `.axm/universal/docs.md` §二的**精简速查版**，供 AI 在 Phase 3 写新文档时快速对齐字段。遇到边界情况回到 docs.md 查全文。
 
-## 三套骨架一览
+## 四套骨架一览
 
 | 骨架 | 用在哪 | 必填字段 | 识别标志 |
 |---|---|---|---|
 | **A 规范** | `universal/*.md` · `project/*.md`（不含 index） | `status` · `last-reviewed` · `owner` · `applies-to` | 有 `applies-to` |
 | **B 知识** | `knowledge/**/*.md`（不含 index） | `status` · `last-reviewed` · `owner` · `depth` · `code-refs` | 有 `depth` + `code-refs` |
 | **C 索引** | 所有 `index.md` | `status` · `last-reviewed` · `owner` · `entries` | 文件名为 `index.md`，有 `entries` |
+| **D 进度** | `progress/**/*.md`（不含 index） | `status` · `last-reviewed` · `owner` · `progress-type` · `initiative` | 有 `progress-type` + `initiative` |
 
 ## 骨架 A（规范）模板
 
@@ -60,6 +61,22 @@ entries:
 
 **关键规则**：`entries[].path` 要与同目录实际子项**双向一致**（不缺、不冗）。可用 `reindex.mjs` 自动同步。
 
+## 骨架 D（进度）模板
+
+```yaml
+<!-- axm-meta
+status: active
+last-reviewed: 2026-05-07
+owner: your-team
+progress-type: roadmap            # roadmap / spec / decision
+initiative: editor-redesign
+related:                          # 可选
+  - ../knowledge/frontend/overview.md
+-->
+```
+
+**关键规则**：进度文档只描述计划、状态、验收与阶段性决策。已经落地的系统事实应同步写入 `knowledge/`。
+
 ## 字段速查
 
 | 字段 | 类型 | 约束 |
@@ -70,6 +87,8 @@ entries:
 | `applies-to` | list | 非空；`universal` 或 `project:<name>` 或其叠加 |
 | `depth` | enum | `overview`（≤150 行）/ `deep`（无行数限制） |
 | `code-refs` | list<string> | 非空；**每条路径必须真实存在** |
+| `progress-type` | enum | `roadmap` / `spec` / `decision` |
+| `initiative` | string | 所属模块、子系统或较大开发主题 |
 | `entries[].path` | string | 文件 `*.md` 或子目录 `<name>/` |
 | `entries[].title` | string | 简短标题 |
 | `entries[].when-to-read` | string | 触发条件一句话 |
@@ -93,6 +112,7 @@ entries:
 3. `last-reviewed` 随手写成 `2026/05/07`（应 `-`）
 4. `applies-to` 漏写（规范文档）
 5. 把 index.md 写成骨架 A（`applies-to` 代替了 `entries`）
+6. 把计划中的能力写成 knowledge 事实（应先放 progress，落地后再同步 knowledge）
 
 ## 什么时候更新 last-reviewed
 
@@ -102,4 +122,5 @@ entries:
 | 规范内容变更并核对过实施现状 | ✅ |
 | 知识文档：`code-refs` 指向的源码被读过、正文与代码一致 | ✅ |
 | 索引：entries 被重新核对 | ✅ |
+| 进度文档：状态、验收结果或事实进度被核对 | ✅ |
 | 仅修 typo / 调整格式 | ❌ |

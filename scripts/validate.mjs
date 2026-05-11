@@ -6,7 +6,7 @@
  *   node scripts/validate.mjs [--target=.]
  *
  * 执行四类检查（错误信息附 docs.md 章节引用）：
- *   1. axm-meta 骨架合法性（三套 A/B/C 必填字段 + 日期格式）
+ *   1. axm-meta 骨架合法性（四套 A/B/C/D 必填字段 + 日期格式）
  *   2. 每份 index.md / index.mdc 的 entries ↔ 同目录实际文件/子目录 双向一致
  *   3. knowledge 目录下的 .md / .mdc 文档 code-refs 指向仓库根相对路径真实存在
  *   4. AGENTS.md 的 Knowledge Index 表里引用的 .axm 路径真实存在
@@ -25,6 +25,7 @@ import { formatIssue, log } from "./_lib/logger.mjs";
 
 const VALID_STATUS = new Set(["active", "draft", "deprecated"]);
 const VALID_DEPTH = new Set(["overview", "deep"]);
+const VALID_PROGRESS_TYPE = new Set(["roadmap", "spec", "decision"]);
 
 function parseArgs(argv) {
 	const args = {};
@@ -110,6 +111,13 @@ function checkFrontmatter(file) {
 		if (!Array.isArray(d["code-refs"]) || d["code-refs"].length === 0) {
 			err(relPath, "docs.md §二.B", "知识文档 code-refs 必须为非空列表");
 		}
+	} else if (kind === "progress") {
+		// 骨架 D
+		if (!d["progress-type"]) err(relPath, "docs.md §二.D", "进度文档缺少 progress-type");
+		else if (!VALID_PROGRESS_TYPE.has(d["progress-type"])) {
+			err(relPath, "docs.md §二.D", `progress-type 非法：${d["progress-type"]}（应为 roadmap/spec/decision）`);
+		}
+		if (!d.initiative) err(relPath, "docs.md §二.D", "进度文档缺少 initiative");
 	}
 	return parsed;
 }

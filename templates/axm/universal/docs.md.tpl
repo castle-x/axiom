@@ -15,13 +15,14 @@ related:
 
 ## 一、文档分类
 
-`.axm/` 下有三类文档，对应三套 axm metadata 骨架：
+`.axm/` 下有四类文档，对应四套 axm metadata 骨架：
 
 | 类别 | 目录 | 生命周期 | 典型内容 | 骨架 |
 |------|------|----------|----------|------|
 | 规范 | `universal/`、`project/` | 长期 | 编码/流程/设计约束 | A |
 | 知识 | `knowledge/**` | 中长期（随代码演进） | 系统设计、模块结构、设计决策 | B |
 | 索引 | 所有 `index.md` | 长期 | 子目录的文件清单与导航 | C |
+| 进度 | `progress/**` | 阶段性 | roadmap、阶段 spec、开发决策与验收状态 | D |
 
 ## 二、axm metadata 骨架（必须）
 
@@ -105,6 +106,29 @@ entries:
 | `entries[].title` | ✅ | 简短标题，供 AI 选择时阅读 |
 | `entries[].when-to-read` | ✅ | 触发条件的一句话描述（何时应读取此条目） |
 
+### 骨架 D — 进度类
+
+用于 `progress/**/*.md`（不含 index.md）。进度文档承载计划、状态与验收信息，不得被当作已实现的系统事实。
+
+```yaml
+<!-- axm-meta
+status: active | draft | deprecated
+last-reviewed: YYYY-MM-DD
+owner: <team-or-person>
+progress-type: roadmap | spec | decision
+initiative: <module-or-initiative-name>
+related:
+  - ../knowledge/<system>/overview.md
+-->
+```
+
+字段定义（仅列与骨架 A 不同的部分）：
+
+| 字段 | 必填 | 说明 |
+|---|---|---|
+| `progress-type` | ✅ | `roadmap`（较大路线图）/ `spec`（一次阶段开发计划）/ `decision`（已确认且影响路线的阶段性决策） |
+| `initiative` | ✅ | 该进度文档所属的模块、子系统或较大开发主题 |
+
 ## 三、axm metadata 写作细则
 
 1. **字段顺序**：按骨架列表顺序编写，便于审阅
@@ -134,12 +158,21 @@ entries:
 ├── project/
 │   ├── index.md                # 骨架 C
 │   └── <spec>.md               # 骨架 A
-└── knowledge/
+├── knowledge/
     ├── index.md                # 骨架 C：子系统索引
     └── <system>/
         ├── index.md            # 骨架 C：子系统内部索引
         ├── overview.md         # 骨架 B, depth=overview
         └── <topic>.md          # 骨架 B, depth=deep
+└── progress/
+    ├── index.md                # 骨架 C：开发进度入口
+    └── <initiative>/
+        ├── index.md            # 骨架 C：某个开发主题索引
+        ├── roadmap.md          # 骨架 D, progress-type=roadmap
+        ├── decisions.md        # 骨架 D, progress-type=decision（可选）
+        └── specs/
+            ├── index.md        # 骨架 C
+            └── <spec>.md       # 骨架 D, progress-type=spec
 ```
 
 **索引链路**（AI 查找规范/知识的路径）：
@@ -163,7 +196,8 @@ AGENTS.md（根入口·Knowledge Index）
 
 - 每个文档回答**一个**问题或定义**一条**规则域
 - 结构化优先：表格 / 列表 / 代码块；拒绝散文式长段落
-- 规范文档写"应该怎么做"；知识文档写"是什么、为什么"
+- 规范文档写"应该怎么做"；知识文档写"是什么、为什么"；进度文档写"准备怎么做、做到哪里、如何验收"
+- 进度文档不得声称计划中的能力已经存在；已经落地的系统事实应同步沉淀到 `knowledge/`
 - 举例优于抽象描述
 - 避免重复：跨文档引用优于复制粘贴
 
@@ -174,7 +208,8 @@ AGENTS.md（根入口·Knowledge Index）
 1. **规范文档**：当规则本身被核对过仍然生效，或内容变更并核对过实施现状，更新 `last-reviewed`
 2. **知识文档**：当 `code-refs` 列出的源码被读过一遍、确认正文描述与代码一致，更新 `last-reviewed`
 3. **索引文档（index.md）**：当 `entries` 列表被重新核对过（文件存在、顺序合理），更新 `last-reviewed`
-4. **仅修 typo / 调整格式 / 优化措辞**：**不**更新 `last-reviewed`
+4. **进度文档**：当 roadmap/spec/decision 的状态被人类确认、验收结果被更新，或进度与代码/PR/任务系统核对过，更新 `last-reviewed`
+5. **仅修 typo / 调整格式 / 优化措辞**：**不**更新 `last-reviewed`
 
 违反审查时效（代码与知识文档不一致）判定为技术债，标记 `@debt:docs` 并在对应 commit 中体现。
 
@@ -191,7 +226,7 @@ AGENTS.md（根入口·Knowledge Index）
 
 - **禁止**在未被用户显式指示的情况下修改 `universal/` 与 `project/` 下任何 `.md`（typo 修复也不例外，需先问）
 - **禁止**以"顺手补齐""使其更完整""对齐当前实现"为由扩写规范条目
-- **禁止**因迁移 / 重构 / 新功能而触发的"规则同步更新"——规则是稳态，应先通过根目录任务文档（如 `MIGRATION-*.md`）表达变化，规则更新由人类收口
+- **禁止**因迁移 / 重构 / 新功能而触发的"规则同步更新"——规则是稳态，应先通过 `progress/` 或根目录任务文档表达变化，规则更新由人类收口
 
 ### 10.2 禁止在规范文档写"进行中"内容
 
@@ -206,8 +241,9 @@ AGENTS.md（根入口·Knowledge Index）
 
 | 内容类型 | 正确归属 |
 |---|---|
-| 迁移进度 / 阶段状态 | 根目录独立迁移文档（如 `MIGRATION-*.md`） |
-| 一次性调研 / 审查 / 设计提案 | 根目录独立文档（如 `PROPOSAL-*.md`、`RESEARCH-*.md`） |
+| roadmap / 阶段 spec / 开发进度 | `.axm/progress/<initiative>/` |
+| 迁移进度 / 阶段状态 | `.axm/progress/<initiative>/roadmap.md` 或根目录独立迁移文档 |
+| 一次性调研 / 审查 / 设计提案 | 根目录独立文档（如 `PROPOSAL-*.md`、`RESEARCH-*.md`）；若进入开发跟踪，再转入 `.axm/progress/` |
 | 任务清单 / TODO | 不入库，走任务系统或 PR 描述 |
 
 ### 10.3 例外触发条件
@@ -220,17 +256,46 @@ AGENTS.md（根入口·Knowledge Index）
 
 违反本节的修改，下一轮审查时应直接 `git checkout --` 回滚，无需征得原修改者同意。
 
-## 十一、工具链约束
+## 十一、progress/ 开发进度约束
+
+`progress/` 专门承载阶段性开发上下文，解决"复杂模块先讨论 roadmap，再拆 spec 分阶段验收"的问题。它的内容可更新、可废弃，但必须保持可判定、可追踪。
+
+### 11.1 Roadmap
+
+`roadmap.md` 记录一个复杂模块或较大开发主题的路线图：
+
+- 只写已经与人类确认过的大方向、阶段划分、依赖关系与当前事实进度
+- 定期更新符合事实的进度，不写流水账
+- 当某阶段完成后，若产生长期系统事实，把事实沉淀到 `knowledge/`
+
+### 11.2 Spec
+
+`specs/<spec>.md` 记录一次阶段开发的细节：
+
+- 背景与目标
+- 范围与非目标
+- 已确认的开发细节
+- 验收标准，固定分为两类：
+  - **AI 自动验收**：命令、测试、脚本、静态检查、可判定输出
+  - **人类验收**：交互路径、预期体验、人工确认点、截图或演示要求
+
+spec 可由 Superpowers、OpenSpec、人工讨论或其他外部方法生成；axm 只约束最终文档的存放位置、metadata 与验收字段。
+
+### 11.3 Decision
+
+`decisions.md` 可选，用于记录已确认且影响 roadmap/spec 的阶段性决策。它不是架构事实库；决策落地后，稳定事实仍应进入 `knowledge/`。
+
+## 十二、工具链约束
 
 - Markdown 渲染器隐藏 `axm-meta` HTML 注释块，Biome/Prettier 不处理其内容 → 零工具链成本
 - 本规范的契约由 axm skill 的 `scripts/validate.mjs` 机械校验，不依赖 git hook
 - 未来如需在 CI 中启用，直接挂 `node <skill-path>/scripts/validate.mjs` 即可
 
-## 附：三套骨架快速对照
+## 附：四套骨架快速对照
 
-| 维度 | 骨架 A（规范） | 骨架 B（知识） | 骨架 C（索引） |
-|---|---|---|---|
-| 必填字段 | status / last-reviewed / owner / applies-to | status / last-reviewed / owner / depth / code-refs | status / last-reviewed / owner / entries |
-| 可选字段 | related | related | — |
-| 使用位置 | universal/*.md · project/*.md | knowledge/**/*.md | 所有 index.md |
-| 触发 `last-reviewed` 更新 | 规则被核对 | 代码对照完成 | entries 核对完成 |
+| 维度 | 骨架 A（规范） | 骨架 B（知识） | 骨架 C（索引） | 骨架 D（进度） |
+|---|---|---|---|---|
+| 必填字段 | status / last-reviewed / owner / applies-to | status / last-reviewed / owner / depth / code-refs | status / last-reviewed / owner / entries | status / last-reviewed / owner / progress-type / initiative |
+| 可选字段 | related | related | — | related |
+| 使用位置 | universal/*.md · project/*.md | knowledge/**/*.md | 所有 index.md | progress/**/*.md |
+| 触发 `last-reviewed` 更新 | 规则被核对 | 代码对照完成 | entries 核对完成 | 状态/验收被核对 |

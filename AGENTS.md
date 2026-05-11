@@ -27,7 +27,7 @@ axm 采用**扁平结构**（非 monorepo），git clone 到 `~/.claude/skills/a
 ### 模块划分
 
 - `SKILL.md` — Anthropic Agent Skills 标准入口（YAML axm-meta + 5 阶段 SOP）
-- `references/*.md` — AI Phase 3 按需加载的写作指南（4 份）
+- `references/*.md` — AI Phase 3 按需加载的写作指南（5 份）
 - `templates/**/*.tpl` — 脚本逐字释放的模板（含 `{{owner}}` / `{{date}}` / `{{project_name}}` 三个变量）
 - `scripts/*.mjs` — 零依赖 Node 脚本（scaffold / validate / reindex）
 - `scripts/_lib/*.mjs` — 脚本共享模块（axm-meta 解析器、walker、logger）
@@ -124,11 +124,12 @@ axm 采用**扁平结构**（非 monorepo），git clone 到 `~/.claude/skills/a
 | 每次任务开始 / 分级与流程            | `.axm/universal/devloop.md`                                                   |
 | 编码完成 / 提交前质量门禁            | `.axm/universal/quality.md`                                                   |
 | 提交 / 分支操作                 | `.axm/universal/vcs.md`                                                       |
-| 写 `.axm` 文档 / 三套骨架契约      | `.axm/universal/docs.md`                                                      |
+| 写 `.axm` 文档 / 四套骨架契约      | `.axm/universal/docs.md`                                                      |
+| 管理 roadmap / spec / 开发进度     | `.axm/universal/docs.md` + `.axm/progress/index.md`                          |
 | 修改脚本（scaffold/validate/reindex） | `.axm/project/coding.md` + `.axm/knowledge/scripts/overview.md`        |
 | 新增脚本能力 / 跨包边界             | `.axm/project/architecture.md`                                                |
 | 修改 SKILL.md 或 references  | `.axm/project/architecture.md` + `.axm/project/coding.md`（写作风格）             |
 | 修改 templates/             | `.axm/project/architecture.md`（模板变量约束）                                        |
 | Bug 修复                    | `.axm/universal/devloop.md` + `.axm/knowledge/scripts/overview.md`           |
 
-`.axm/` 目录分区：`universal/`（通用流程）、`project/`（本项目规范）、`knowledge/`（系统设计事实）。各目录有 `index.md` 总索引。
+`.axm/` 目录分区：`universal/`（通用流程）、`project/`（本项目规范）、`knowledge/`（系统设计事实）、`progress/`（roadmap、阶段 spec、验收状态）。各目录有 `index.md` 总索引。

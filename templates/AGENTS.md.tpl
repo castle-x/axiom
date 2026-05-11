@@ -97,7 +97,7 @@
 
 ## Knowledge Index
 
-<!-- TODO(axm): 由 AI 在 Phase 3 根据项目实际情况补充项目特有的"任务类型 → 文档路径"路由。下方 4 行是最小通用入口，请保留。 -->
+<!-- TODO(axm): 由 AI 在 Phase 3 根据项目实际情况补充项目特有的"任务类型 → 文档路径"路由。下方 5 行是最小通用入口，请保留。 -->
 
 | 任务类型             | 读哪里                          |
 | ---------------- | ---------------------------- |
@@ -105,5 +105,6 @@
 | 编码完成 / 提交前质量门禁   | `.axm/universal/quality.md` |
 | 提交 / 分支操作        | `.axm/universal/vcs.md`     |
 | 写 `.axm` 文档       | `.axm/universal/docs.md`    |
+| roadmap / spec / 开发进度 | `.axm/progress/index.md`    |
 
-`.axm/` 目录分区：`universal/`（通用流程）、`project/`（项目规范）、`knowledge/`（系统设计事实）。各目录有 `index.md` 总索引。
+`.axm/` 目录分区：`universal/`（通用流程）、`project/`（项目规范）、`knowledge/`（系统设计事实）、`progress/`（roadmap、阶段 spec、验收状态）。各目录有 `index.md` 总索引。
