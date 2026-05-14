@@ -115,7 +115,7 @@ entries:
 status: active | draft | deprecated
 last-reviewed: YYYY-MM-DD
 owner: <team-or-person>
-progress-type: roadmap | spec | decision
+progress-type: roadmap | spec | decision | bug
 initiative: <module-or-initiative-name>
 related:
   - ../knowledge/<system>/overview.md
@@ -126,7 +126,7 @@ related:
 
 | 字段 | 必填 | 说明 |
 |---|---|---|
-| `progress-type` | ✅ | `roadmap`（较大路线图）/ `spec`（一次阶段开发计划）/ `decision`（已确认且影响路线的阶段性决策） |
+| `progress-type` | ✅ | `roadmap`（较大路线图）/ `spec`（一次阶段开发计划）/ `decision`（已确认且影响路线的阶段性决策）/ `bug`（一条 BUG 记录） |
 | `initiative` | ✅ | 该进度文档所属的模块、子系统或较大开发主题 |
 
 ## 三、axm metadata 写作细则
@@ -166,6 +166,10 @@ related:
         └── <topic>.md          # 骨架 B, depth=deep
 └── progress/
     ├── index.md                # 骨架 C：开发进度入口
+    ├── bugs/                   # BUG 管理（可选）
+    │   ├── index.md            # 骨架 C：BUG 索引
+    │   ├── log.md              # 骨架 D, progress-type=roadmap（BUG 看板/汇总）
+    │   └── <bug-id>.md         # 骨架 D, progress-type=bug
     └── <initiative>/
         ├── index.md            # 骨架 C：某个开发主题索引
         ├── roadmap.md          # 骨架 D, progress-type=roadmap
@@ -286,6 +290,19 @@ spec 可由 Superpowers、OpenSpec、人工讨论或其他外部方法生成；a
 ### 11.3 Decision
 
 `decisions.md` 可选，用于记录已确认且影响 roadmap/spec 的阶段性决策。它不是架构事实库；决策落地后，稳定事实仍应进入 `knowledge/`。
+
+### 11.4 Bug
+
+`progress/bugs/` 承载项目级 BUG 管理，是面向 AI 的通用 BUG 管理规范（不限于 API 测试，任何测试 agent 产出的缺陷都走这里）。
+
+- 每条 BUG 一份独立 `<bug-id>.md`，骨架 D、`progress-type: bug`、`initiative: bugs`
+- `bugs/log.md` 作为看板汇总，骨架 D、`progress-type: roadmap`，列出所有未关闭 BUG 与状态分布
+- BUG 文档必须写清：标题、优先级、复现步骤、期望/实际表现、影响范围、修复验收标准（AI 自动验收 + 人类验收）、当前状态
+- BUG 生命周期使用固定状态：`open` → `in-progress` → `fixed` → `verified` → `closed`；可回退到 `reopened`、`wont-fix`、`duplicate`
+- BUG ID 命名 kebab-case，例如 `bug-2026-05-14-login-timeout.md`；BUG 关闭后**不删除**文档，保留为历史证据
+- BUG 修复并验收通过后，若产生长期系统事实或回归测试，应同步沉淀到 `knowledge/` 或 `project/`
+
+详细写作规范见 `<skill-path>/references/bug-doc-guide.md`。
 
 ## 十二、工具链约束
 

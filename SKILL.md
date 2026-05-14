@@ -13,6 +13,7 @@ description: |
   - 用户要同步 index 索引（reindex / reindex.mjs / index.md 没更新）
   - 用户要管理 roadmap / spec / 开发进度 / 阶段验收，并希望放入 axm
   - 用户要闭合、归档或收尾已完成的 progress / roadmap / spec
+  - 用户要管理 BUG / 缺陷 / 测试 agent 产出的问题 / BUG 列表 / BUG 看板 / BUG 优先级 / BUG 验收 / BUG 状态（open、fixed、verified、reopened、closed、wont-fix、duplicate）
   - 项目没有 .axm 目录或 AGENTS.md，需要新建
 
   核心流程：5 阶段 SOP（AI 扫项目 → 脚本 scaffold 通用规范 → AI 写项目特有文档 → 脚本校验契约 → 交付）。也可单独跑 validate.mjs 或 reindex.mjs。
@@ -34,7 +35,8 @@ axm/
 │   ├── project-spec-guide.md      # 写 project/*.md 的要点
 │   ├── knowledge-doc-guide.md     # 写 knowledge/**/*.md 的要点
 │   ├── agents-md-guide.md         # 定制 AGENTS.md 的要点
-│   └── progress-doc-guide.md      # 写 progress/**/*.md 的要点
+│   ├── progress-doc-guide.md      # 写 progress/**/*.md 的要点
+│   └── bug-doc-guide.md           # 写 progress/bugs/**/*.md 的要点（通用 BUG 管理规范）
 ├── templates/            # 脚本逐字释放的模板（.tpl 后缀）
 │   ├── AGENTS.md.tpl
 │   └── axm/              # 释放到目标仓库的 .axm/
@@ -196,6 +198,28 @@ roadmap 记录较大路线图和事实进度；spec 记录某次阶段开发的�
 - 跑 `reindex.mjs --dry-run` 与 `validate.mjs`
 
 已完成但仍有历史参考价值的 progress 文档通常保持 axm-meta `status: active`；只有被新方案取代或不应再作为参考时才改成 `deprecated`。
+
+#### 3.8 可选：建立 BUG 管理（项目级通用规范）
+
+当用户希望管理 BUG（来自测试 agent、人工测试或生产事故），需要"BUG 列表 + 优先级 + 验收标准 + 状态流转"时，先读 `<skill-path>/references/bug-doc-guide.md`，再在 `.axm/progress/bugs/` 下建立：
+
+```
+progress/bugs/
+├── index.md            # 骨架 C：BUG 索引
+├── log.md              # 骨架 D, progress-type=roadmap：BUG 看板汇总
+└── <bug-id>.md         # 骨架 D, progress-type=bug：单条 BUG
+```
+
+关键约束（在 `bug-doc-guide.md` 中有完整说明）：
+
+- BUG 文件命名 `bug-YYYY-MM-DD-<slug>.md`，是 axm 日期前缀禁令的**唯一豁免**
+- 单条 BUG 必须含：优先级（P0/P1/P2/P3）、严重度（Blocker/Critical/Major/Minor/Trivial）、复现步骤、期望/实际表现、影响模块、修复验收标准（AI 自动验收 + 人类验收）、时间线
+- BUG 生命周期固定 8 状态：`open` → `in-progress` → `fixed` → `verified` → `closed`，可走 `reopened` / `wont-fix` / `duplicate`
+- BUG 关闭后**不删除**文档；长期事实关闭时同步到 `knowledge/`
+- 看板 `log.md` 与单条 BUG 文档冲突时，以单条文档为准
+- 任何状态变更必须在"时间线"表追加新行，禁止改写历史
+
+测试 agent 产 BUG / 开发 agent 修 BUG / 验收 agent 验 BUG 的标准流程均在 `bug-doc-guide.md` 中。
 
 ### Phase 4 Validate（脚本执行）
 

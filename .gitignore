@@ -3,6 +3,7 @@
 .claude/
 .codebuddy/
 .omc/
+.workbuddy/
 
 # axm 本地工作区（运行 scaffold/validate 时生成的临时产物）
 axm-workspace/

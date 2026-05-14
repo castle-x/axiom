@@ -68,7 +68,7 @@ entries:
 status: active
 last-reviewed: 2026-05-07
 owner: your-team
-progress-type: roadmap            # roadmap / spec / decision
+progress-type: roadmap            # roadmap / spec / decision / bug
 initiative: editor-redesign
 related:                          # 可选
   - ../knowledge/frontend/overview.md
@@ -87,7 +87,7 @@ related:                          # 可选
 | `applies-to` | list | 非空；`universal` 或 `project:<name>` 或其叠加 |
 | `depth` | enum | `overview`（≤150 行）/ `deep`（无行数限制） |
 | `code-refs` | list<string> | 非空；**每条路径必须真实存在** |
-| `progress-type` | enum | `roadmap` / `spec` / `decision` |
+| `progress-type` | enum | `roadmap` / `spec` / `decision` / `bug` |
 | `initiative` | string | 所属模块、子系统或较大开发主题 |
 | `entries[].path` | string | 文件 `*.md` 或子目录 `<name>/` |
 | `entries[].title` | string | 简短标题 |

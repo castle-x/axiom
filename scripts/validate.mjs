@@ -25,7 +25,7 @@ import { formatIssue, log } from "./_lib/logger.mjs";
 
 const VALID_STATUS = new Set(["active", "draft", "deprecated"]);
 const VALID_DEPTH = new Set(["overview", "deep"]);
-const VALID_PROGRESS_TYPE = new Set(["roadmap", "spec", "decision"]);
+const VALID_PROGRESS_TYPE = new Set(["roadmap", "spec", "decision", "bug"]);
 
 function parseArgs(argv) {
 	const args = {};
@@ -115,7 +115,7 @@ function checkFrontmatter(file) {
 		// 骨架 D
 		if (!d["progress-type"]) err(relPath, "docs.md §二.D", "进度文档缺少 progress-type");
 		else if (!VALID_PROGRESS_TYPE.has(d["progress-type"])) {
-			err(relPath, "docs.md §二.D", `progress-type 非法：${d["progress-type"]}（应为 roadmap/spec/decision）`);
+			err(relPath, "docs.md §二.D", `progress-type 非法：${d["progress-type"]}（应为 roadmap/spec/decision/bug）`);
 		}
 		if (!d.initiative) err(relPath, "docs.md §二.D", "进度文档缺少 initiative");
 	}

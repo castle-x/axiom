@@ -24,6 +24,17 @@ progress/<initiative>/
     └── <spec>.md
 ```
 
+并列于各 `<initiative>/` 之外，可选地存在一个项目级 BUG 管理目录：
+
+```
+progress/bugs/
+├── index.md
+├── log.md           # BUG 看板汇总（骨架 D, progress-type=roadmap）
+└── <bug-id>.md      # 单条 BUG（骨架 D, progress-type=bug）
+```
+
+BUG 管理是面向 AI 的通用规范，不限测试类型（API/UI/单测/人工皆适用）。详细写作规则见 `bug-doc-guide.md`。
+
 ## roadmap.md
 
 Roadmap 面向较大模块或较大开发主题，回答"大方向如何拆、现在到哪里"。
@@ -130,6 +141,7 @@ related:
 - `roadmap`
 - `spec`
 - `decision`
+- `bug`（仅用于 `progress/bugs/<bug-id>.md`，详见 `bug-doc-guide.md`）
 
 ## 自查清单
 
