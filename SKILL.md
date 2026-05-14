@@ -19,11 +19,11 @@ description: |
   核心流程：5 阶段 SOP（AI 扫项目 → 脚本 scaffold 通用规范 → AI 写项目特有文档 → 脚本校验契约 → 交付）。也可单独跑 validate.mjs 或 reindex.mjs。
 ---
 
-# axm — Agent 上下文初始化
+# axm
 
 `.axm/` 是一套**给 AI 看的**项目上下文目录规范：用四类有契约的文档（规范 A / 知识 B / 索引 C / 进度 D）承载"这个项目怎么做、是什么、去哪读、做到哪里"，配合根目录 `AGENTS.md` 的 Knowledge Index 路由表，让 AI 接手任意任务前能快速定位需要的上下文。
 
-本 skill 的核心分工是"**AI 判断 + 脚本机械**"：AI 读项目源码、理解技术栈、撰写项目特有的架构与知识文档；脚本释放跨项目通用的规范（4 份 universal 文件）、校验 axm-meta 契约、同步 index 索引。
+本 skill 的核心分工是"**AI 判断 + 脚本机械**"：脚本负责跨项目逐字一致的内容（4 份 universal 规范 + axm-meta 契约校验 + index 同步），因为这些一旦漂移就让多项目维护者抓狂；AI 负责只能读代码才写得对的部分（架构、模块边界、真实源码路径、Knowledge Index 任务路由），因为这些是 AI 扫一遍项目才知道的。两边各做自己擅长的，初始化完的那一刻既有可复用骨架，也有项目特有的血肉。
 
 Skill 目录布局：
 
@@ -48,10 +48,14 @@ axm/
 
 ## 何时使用本 skill
 
-- 新仓库：没有 `.axm/` 目录、没有 `AGENTS.md`——走完整 5 阶段初始化
-- 已有 `.axm/` 但怀疑漂移：只跑 Phase 4 Validate 做契约检查
-- 新增文档后：只跑 `reindex.mjs` 同步索引
-- 已有 `AGENTS.md` 但没有 `.axm/`：走 5 阶段，scaffold 会默认跳过 `AGENTS.md`（保留用户现有内容），AI 再手动补 Knowledge Index 段
+description 已列出触发短语。补充一条选择策略：
+
+| 仓库现状 | 入口 |
+|---|---|
+| 没有 `.axm/` 也没有 `AGENTS.md` | 走完整 5 阶段 |
+| 有 `AGENTS.md` 没有 `.axm/` | 走 5 阶段；scaffold 默认跳过 `AGENTS.md`，AI 后续手动补 Knowledge Index |
+| 有 `.axm/` 怀疑漂移 | 只跑 Phase 4 Validate |
+| 新增/删除 `.axm/**/*.md` | 只跑 `reindex.mjs` |
 
 ## 5 阶段 SOP
 
@@ -126,7 +130,7 @@ node <skill-path>/scripts/scaffold.mjs \
 
 **目标**：根据 Phase 1 画像，把"项目特有"的部分填进去。这是整个流程里 AI **唯一**要亲自写 `.md` 的阶段。
 
-**操作**：按顺序做以下 3 件事。每做一件**先读对应的 references 指南**再动手：
+**操作**：按 3.1-3.8 顺序推进，每做一件**先读对应的 references 指南**再动手。3.6-3.8 按用户需要可选。
 
 #### 3.1 写 `project/architecture.md`（必须）
 
@@ -201,29 +205,14 @@ roadmap 记录较大路线图和事实进度；spec 记录某次阶段开发的�
 
 #### 3.8 可选：建立 BUG 管理（挂在 initiative 下的通用规范）
 
-当用户希望管理 BUG（来自测试 agent、人工测试或生产事故），需要"BUG 列表 + 优先级 + 验收标准 + 状态流转"时，先读 `<skill-path>/references/bug-doc-guide.md`，再在所属 `.axm/progress/<initiative>/bugs/` 下建立：
+当用户希望管理 BUG（来自测试 agent、人工测试或生产事故）——需要"BUG 列表 + 优先级 + 验收标准 + 状态流转"——**先读 `<skill-path>/references/bug-doc-guide.md`**，再在 `.axm/progress/<initiative>/bugs/` 下落地。
 
-```
-progress/<initiative>/bugs/
-├── index.md            # 骨架 C：本主题 BUG 索引
-├── log.md              # 骨架 D, progress-type=roadmap：本主题 BUG 看板汇总
-└── <bug-id>.md         # 骨架 D, progress-type=bug：单条 BUG
-```
+进入 3.8 前必须先就位的判断（其余约束以 `bug-doc-guide.md` 为准）：
 
-关键约束（在 `bug-doc-guide.md` 中有完整说明）：
+- BUG **必须**挂在某个 initiative 下；找不到归属时**先新建 initiative**（推荐 `progress/quality/`，或具体模块如 `progress/<module>/`），先建 `<initiative>/index.md`，再开 `bugs/`
+- 不要在 `progress/` 顶层另建 `bugs/`；不要把 axm-meta `initiative` 字段填成 `bugs`
 
-- **BUG 必须挂在某个 initiative 下**，禁止在 `progress/` 顶层另建 `bugs/`
-- 若 BUG 没有现成的归属主题：**先新建 initiative**（推荐 `progress/quality/`，或具体模块如 `progress/<module>/`），并先建好 `<initiative>/index.md`，再在其下开 `bugs/`
-- BUG 文件命名 `bug-YYYY-MM-DD-<slug>.md`，是 axm 日期前缀禁令的**唯一豁免**
-- axm-meta 中 `initiative` 字段填**实际主题名**（如 `auth-redesign`、`quality`），**禁止填 `bugs`**
-- 单条 BUG 必须含：所属 initiative、优先级（P0/P1/P2/P3）、严重度（Blocker/Critical/Major/Minor/Trivial）、复现步骤、期望/实际表现、影响模块、修复验收标准（AI 自动验收 + 人类验收）、时间线
-- BUG 生命周期固定 8 状态：`open` → `in-progress` → `fixed` → `verified` → `closed`，可走 `reopened` / `wont-fix` / `duplicate`
-- BUG 关闭后**不删除**文档；长期事实关闭时同步到 `knowledge/`
-- 看板 `<initiative>/bugs/log.md` 与单条 BUG 文档冲突时，以单条文档为准
-- 任何状态变更必须在"时间线"表追加新行，禁止改写历史
-- 需要"全项目所有未关闭 BUG"视图时，遍历各 `progress/*/bugs/log.md` 临时聚合，**不要**创建顶层 `progress/bugs/`
-
-测试 agent 产 BUG / 开发 agent 修 BUG / 验收 agent 验 BUG 的标准流程均在 `bug-doc-guide.md` 中。
+剩下的（命名、骨架、生命周期 8 状态、看板、测试/开发/验收三套流程、反模式、自查清单）全部在 `bug-doc-guide.md` 中，不在本文件复述。
 
 ### Phase 4 Validate（脚本执行）
 
@@ -304,30 +293,12 @@ node <skill-path>/scripts/reindex.mjs --target=<项目根>
 
 reindex 会保留已有 `entries` 的顺序和 title/when-to-read，只追加孤儿（标 TODO）、删除失效条目。
 
-### 闭合已完成 progress
-
-用户确认某个阶段完成后，读 `references/progress-doc-guide.md`，按"闭合已完成 progress"流程更新 roadmap/spec/knowledge，最后运行：
-
-```bash
-node <skill-path>/scripts/reindex.mjs --target=<项目根> --dry-run
-node <skill-path>/scripts/validate.mjs --target=<项目根>
-```
+> 闭合已完成 progress 的完整流程见 Phase 3.7；操作完后跑一次 `reindex.mjs --dry-run` + `validate.mjs` 收尾即可。
 
 ## 关键约束（必须遵守）
 
-1. **Phase 2 之前不能写 .md**。通用规范由脚本释放，不要手写——否则跨项目会漂移
-2. **Phase 3 的 code-refs 必须真实存在**。不要填"听起来合理"的路径，必须实际在仓库里看到这个文件才写
-3. **Phase 4 ERROR 必须修**，不能视而不见交付
-4. **不要自作主张修改 universal/ 下的 4 份文件**。那是跨项目"宪法"，用户若要改应显式说，然后改的是 skill 里的 templates/，不是目标项目里的文件
-5. **不创建 deep 知识文档**（除非用户明确要求具体话题）。第一版 knowledge 只有 overview 就够了
+1. **Phase 2 之前不能写 .md**——通用规范由脚本释放，手写会跨项目漂移
+2. **Phase 4 ERROR 必须修**，不能视而不见交付
+3. **不要自作主张修改目标项目 `universal/` 下的 4 份文件**。那是跨项目"宪法"，需要变更时改 skill 里的 `templates/`，不是目标项目里的产物
 
-## 为什么要这么设计
-
-"AI 读项目 + 脚本抄写通用内容"这个分工有意为之：
-
-- **universal 规范跨项目应逐字一致**（它是"宪法"，漂移会让多项目维护者抓狂）—— 适合脚本
-- **project / knowledge 只有 AI 读代码才写得对**（技术栈、模块边界、真实源码路径都是 AI 扫一遍项目才知道的）—— 适合 AI
-- **axm-meta 契约是机械规则**（字段名、日期格式、索引一致性）—— 适合脚本
-- **Knowledge Index 路由（任务→文档映射）需要理解项目任务形态** —— 适合 AI
-
-不用纯脚本是因为脚本会产出"空壳"；不用纯 AI 是因为 AI 每次重写长文档费 token 且容易漂移。两边各做自己擅长的，才能在初始化完的那一刻既有可复用的骨架又有项目特有的血肉。
+（"code-refs 必须真实存在"、"deep 知识文档不主动写"已在 Phase 3.3 里讲过，不再单列。）
