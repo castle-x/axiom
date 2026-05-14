@@ -1,8 +1,8 @@
-# axm
+# Axiom
 
 > 给任何新项目一份 **AI 专用的上下文目录** `.axm/` 与 **根入口** `AGENTS.md`。
 
-axm 是一个 [Anthropic Agent Skill](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) 包。它让支持 Skills 的 AI（Claude Code、Codebuddy、Claude Desktop 等）能够：
+Axiom(axm) 是一个符合 [Anthropic Agent Skill](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) 规范的技能包。它让支持 Skills 的 AI（Claude Code、Codex、OpenCode 等）能够：
 
 1. **读懂**你的项目（扫 `package.json` / `Cargo.toml` / 目录结构）
 2. **释放**跨项目通用的规范文档（DEVLOOP、文档契约、质量门禁、VCS 规范共 4 份）
