@@ -12,6 +12,7 @@ description: |
   - 用户要校验 .axm axm-meta 契约（validate.mjs）
   - 用户要同步 index 索引（reindex / reindex.mjs / index.md 没更新）
   - 用户要管理 roadmap / spec / 开发进度 / 阶段验收，并希望放入 axm
+  - 用户要闭合、归档或收尾已完成的 progress / roadmap / spec
   - 项目没有 .axm 目录或 AGENTS.md，需要新建
 
   核心流程：5 阶段 SOP（AI 扫项目 → 脚本 scaffold 通用规范 → AI 写项目特有文档 → 脚本校验契约 → 交付）。也可单独跑 validate.mjs 或 reindex.mjs。
@@ -185,6 +186,17 @@ progress/<initiative>/
 
 roadmap 记录较大路线图和事实进度；spec 记录某次阶段开发的细节和验收标准。验收标准必须分为 **AI 自动验收** 与 **人类验收**。spec 的生成方法不限，可来自 Superpowers、OpenSpec 或人工讨论；axm 只约束最终文档位置与骨架 D。
 
+#### 3.7 可选：闭合已完成 progress
+
+当用户说某个阶段、spec 或 roadmap 已完成，需要"收尾 / 闭合 / 归档"时，先读 `<skill-path>/references/progress-doc-guide.md` 的闭合流程，再更新对应 progress 文档。闭合不是简单把状态改成 done；必须同时：
+
+- 把已落地且仍长期有效的系统事实同步到 `knowledge/` 或 `project/`
+- 在 roadmap/spec 中记录完成状态、最终验收、commit/PR 或等价证据
+- 把遗留项移动到后续阶段、独立 spec 或明确标为 deferred
+- 跑 `reindex.mjs --dry-run` 与 `validate.mjs`
+
+已完成但仍有历史参考价值的 progress 文档通常保持 axm-meta `status: active`；只有被新方案取代或不应再作为参考时才改成 `deprecated`。
+
 ### Phase 4 Validate（脚本执行）
 
 **目标**：机械校验 Phase 2+3 的产物符合 `docs.md` 契约。
@@ -263,6 +275,15 @@ node <skill-path>/scripts/reindex.mjs --target=<项目根>
 ```
 
 reindex 会保留已有 `entries` 的顺序和 title/when-to-read，只追加孤儿（标 TODO）、删除失效条目。
+
+### 闭合已完成 progress
+
+用户确认某个阶段完成后，读 `references/progress-doc-guide.md`，按"闭合已完成 progress"流程更新 roadmap/spec/knowledge，最后运行：
+
+```bash
+node <skill-path>/scripts/reindex.mjs --target=<项目根> --dry-run
+node <skill-path>/scripts/validate.mjs --target=<项目根>
+```
 
 ## 关键约束（必须遵守）
 
