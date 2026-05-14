@@ -1,22 +1,9 @@
 ---
 name: axm
 description: |
-  为项目建立 AI 可读的上下文知识库（.axm/ 目录 + AGENTS.md 路由表），让 AI 接手任务时无需每次重新解释架构和技术栈。
+  为项目建立 AI 可读的上下文知识库——`.axm/` 目录（规范 / 知识 / 索引 / 进度四类文档）加根目录 `AGENTS.md` 路由表，让 AI 接手任务时不必每次重新解释技术栈与架构。
 
-  以下情况立即调用本 skill：
-  - 用户提到 "axm"、".axm/"、".md 文件"、"初始化 axm"、"建立项目规则库"
-  - 用户想配置 "AI 上下文目录"、"AI 能读懂的上下文规范"、"机器可读的项目规范"
-  - 用户说 AI 每次接手任务都要重新解释技术栈 / 架构
-  - 用户想给团队统一 AI 上下文、让所有人用 claude 拿到一致的项目知识
-  - 用户要配置或补全 AGENTS.md（Knowledge Index / Architecture 段）
-  - 用户要校验 .axm axm-meta 契约（validate.mjs）
-  - 用户要同步 index 索引（reindex / reindex.mjs / index.md 没更新）
-  - 用户要管理 roadmap / spec / 开发进度 / 阶段验收，并希望放入 axm
-  - 用户要闭合、归档或收尾已完成的 progress / roadmap / spec
-  - 用户要管理 BUG / 缺陷 / 测试 agent 产出的问题 / BUG 列表 / BUG 看板 / BUG 优先级 / BUG 验收 / BUG 状态（open、fixed、verified、reopened、closed、wont-fix、duplicate）
-  - 项目没有 .axm 目录或 AGENTS.md，需要新建
-
-  核心流程：5 阶段 SOP（AI 扫项目 → 脚本 scaffold 通用规范 → AI 写项目特有文档 → 脚本校验契约 → 交付）。也可单独跑 validate.mjs 或 reindex.mjs。
+  在以下场景必须立即调用：初始化或补全 axm / `AGENTS.md`；校验 axm-meta 契约（validate.mjs）或同步 index（reindex.mjs）；管理 roadmap / spec / 开发进度并写入 axm；管理 BUG（提交、优先级、验收、状态流转、关闭、重开）。
 ---
 
 # axm
@@ -45,17 +32,6 @@ axm/
     ├── validate.mjs      # 校验契约
     └── reindex.mjs       # 同步索引
 ```
-
-## 何时使用本 skill
-
-description 已列出触发短语。补充一条选择策略：
-
-| 仓库现状 | 入口 |
-|---|---|
-| 没有 `.axm/` 也没有 `AGENTS.md` | 走完整 5 阶段 |
-| 有 `AGENTS.md` 没有 `.axm/` | 走 5 阶段；scaffold 默认跳过 `AGENTS.md`，AI 后续手动补 Knowledge Index |
-| 有 `.axm/` 怀疑漂移 | 只跑 Phase 4 Validate |
-| 新增/删除 `.axm/**/*.md` | 只跑 `reindex.mjs` |
 
 ## 5 阶段 SOP
 
