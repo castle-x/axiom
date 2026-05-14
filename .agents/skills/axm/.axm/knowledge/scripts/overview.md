@@ -1,0 +1,107 @@
+<!-- axm-meta
+status: active
+last-reviewed: 2026-05-07
+owner: axm-skill
+depth: overview
+code-refs:
+  - scripts/scaffold.mjs
+  - scripts/validate.mjs
+  - scripts/reindex.mjs
+  - scripts/_lib/frontmatter.mjs
+  - scripts/_lib/axm-walker.mjs
+  - scripts/_lib/logger.mjs
+related:
+  - ../../project/architecture.md
+  - ../../project/coding.md
+-->
+
+# 脚本子系统 — 速查
+
+## 定位
+
+axm skill 的"机械层"。这里的每行代码都服务于"AI 不该做的事"：
+
+- 跨项目需逐字一致的文件释放 → `scaffold.mjs`
+- 可机械判定的契约校验 → `validate.mjs`
+- 文件系统与索引文件的同步 → `reindex.mjs`
+
+AI 通过 `node scripts/<name>.mjs <args>` 调用，不直接读取脚本源码（source 只对维护者重要）。
+
+## 三个主脚本
+
+| 脚本 | 触发时机（SOP 阶段） | 关键参数 | 读/写 |
+|---|---|---|---|
+| `scaffold.mjs` | Phase 2 | `--owner` `--date` `--project-name` `--target` `--force` | 读 `templates/**/*.tpl`，写 `<target>/.axm/` + `<target>/AGENTS.md` |
+| `validate.mjs` | Phase 4 | `--target` | 只读 `<target>/.axm/` + `<target>/AGENTS.md`，打印结果 |
+| `reindex.mjs` | Phase 4 辅助 / 独立调用 | `--target` `--dry-run` | 读写 `<target>/.axm/**/index.md` |
+
+## _lib 共享模块
+
+| 模块 | 职责 | 关键导出 |
+|---|---|---|
+| `_lib/frontmatter.mjs` | `axm-meta` 注释块解析，兼容旧 YAML frontmatter | `parseFrontmatter(raw) → {data, body, hasMeta, metaKind}` |
+| `_lib/axm-walker.mjs` | 递归 `.axm/` 并按位置分类 `.md` / `.mdc` 文件 | `walkAxm(axmRoot, repoRoot) → AxmFile[]`（kind ∈ index/universal/project/knowledge） |
+| `_lib/logger.mjs` | 统一输出格式 | `log.info/warn/error/plain`、`formatIssue(level, issue)` |
+
+## 零依赖设计
+
+所有脚本**只用 Node 内置模块**。YAML 解析是手写的（约 130 行），只支持三套骨架的必要子集：
+
+- 标量（string / date / boolean）
+- inline 列表 `[a, b]`
+- block 字符串列表（`related` / `code-refs`）
+- `entries` 对象列表
+
+**不支持**：嵌套 map / 多行字符串 / 锚点别名 / flow map / YAML 注释。这个边界由 `project/coding.md` 硬约束——扩展要求先改 `docs.md` 契约。
+
+## 退出码约定
+
+| 退出码 | 含义 | 产生者 |
+|---|---|---|
+| `0` | 成功 / 零错误 | 全部脚本 |
+| `1` | 契约违反 / 致命错误（文件读写失败、metadata 解析失败） | 全部脚本 |
+| `2` | 仅 WARN（无 ERROR） | `validate.mjs` 专用 |
+
+## 关键调用链
+
+### Phase 2 初始化链
+
+```
+scaffold.mjs
+  └→ collectTemplates(TEMPLATES_DIR)     # 扫 templates/**/*.tpl
+  └→ for each tpl:
+      ├→ mapToDestRel(tpl.rel)            # templates/axm/... → .axm/...
+      ├→ renderTemplate(raw, vars)         # {{owner}} {{date}} {{project_name}}
+      └→ fs.writeFileSync or skip
+```
+
+### Phase 4 校验链
+
+```
+validate.mjs
+  ├→ walkAxm(axmRoot, repoRoot)            # 收集所有 .md
+  ├→ for each file: checkFrontmatter(file) # 骨架字段 + 日期
+  ├→ checkIndexSync(files)                  # entries ↔ 实际文件双向一致
+  ├→ checkCodeRefs(files)                   # knowledge/code-refs 指向真实源码
+  ├→ checkAgentsRefs(repoRoot)              # AGENTS.md Knowledge Index 段引用可达
+  └→ printSummary() → exit(0|1|2)
+```
+
+### reindex 合并语义
+
+```
+reindex.mjs
+  └→ findIndexFiles(axmRoot)               # 所有 index.md
+  └→ for each idx:
+      ├→ parseFrontmatter(raw).entries      # 已有 entries
+      ├→ collectActual(dir)                 # 同目录实际子项
+      ├→ mergeEntries(existing, actual)     # 保序 + 保留 title/when-to-read + 追加孤儿 + 删失效
+      └→ rewriteEntries(raw, merged)        # 只替换 entries 块，正文一字不动
+      └→ .tmp + rename（原子写入）
+```
+
+## 常见扩展陷阱
+
+1. **加 YAML 功能前先问：契约真的需要吗？** 如果只是"想支持多行字符串让文档更美"，不值得——简化 `.axm` 文档即可
+2. **加 CLI 参数前先问：这是机械操作还是判断操作？** 如果脚本开始长出 `if (isNodeProject)` / `if (stack === 'rust')`，那是判断，应该上移到 SKILL.md SOP
+3. **修 reindex 排序前**：current 实现**保留原顺序 + 追加孤儿**，这是有意为之（保护人文编排）。不要改成字典序
