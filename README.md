@@ -1,212 +1,132 @@
 # Axiom
 
-> 给任何新项目一份 **AI 专用的上下文目录** `.axm/` 与 **根入口** `AGENTS.md`。
+> 给项目一份**给 AI 看的**上下文目录 `.axm/` 与根入口 `AGENTS.md`，让 AI 接手任务时不必每次从零理解你的代码库。
 
-Axiom(axm) 是一个符合 [Anthropic Agent Skill](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) 规范的技能包。它让支持 Skills 的 AI（Claude Code、Codex、OpenCode 等）能够：
+## 它解决什么
 
-1. **读懂**你的项目（扫 `package.json` / `Cargo.toml` / 目录结构）
-2. **释放**跨项目通用的规范文档（DEVLOOP、文档契约、质量门禁、VCS 规范共 4 份）
-3. **撰写**项目特有的架构、编码、知识文档
-4. **管理**阶段性开发进度（roadmap、阶段 spec、验收状态）
-5. **校验**文档契约（axm-meta 骨架、索引一致性、code-refs 真实性）
-6. **交付**一份可复用、可演化的 AI 上下文库
+每开一个新会话，AI 都要重新扫一遍 `package.json`、目录结构、README，再猜你的架构约束。猜得对当然好，猜错就要返工。
 
-## 设计哲学
+Axiom 把那份"你希望 AI 每次都已经知道的事情"沉淀成项目内的规范文档：
 
-**AI 判断 + 脚本抄写**。跨项目逐字一致的通用规范由脚本释放；项目特有的架构/知识由 AI 读完代码再写；可机械判定的契约由脚本校验。
+- 跨项目逐字一致的"宪法"（DEVLOOP、文档契约、质量门禁、VCS 规范）由脚本释放
+- 项目特有的架构、模块边界、源码地图由 AI 读完代码后撰写
+- BUG / roadmap / spec 等阶段性内容用统一骨架管理
+- 整套契约由零依赖 Node 脚本机械校验，避免人工漂移
 
-- 纯脚本 CLI → 只能产出空壳，不懂你的项目
-- 纯 AI 重写 → 每个项目通用规范都在漂移，且费 token
-- **Skill 主导 + 三个零依赖 Node 脚本** → 各做自己擅长的事
+`.axm/` 的设计让 Claude Code、Codex、OpenCode 等支持 [Anthropic Agent Skill](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) 规范的工具直接消费这份上下文。
 
 ## 安装
 
-axm 是 Agent Skill，不需要 `npm install`。把本仓库放到 AI 客户端的 skills 目录即可：
+让 AI 帮你安装：
 
-### Claude Code
-
-```bash
-# 全局安装（跨所有项目可用）
-git clone https://github.com/castle-x/axiom.git ~/.claude/skills/axm
-
-# 或项目级安装（只对当前仓库可用）
-cd <your-project>
-git clone https://github.com/castle-x/axiom.git .claude/skills/axm
+```
+帮我安装 https://github.com/castle-x/axiom.git
 ```
 
-### Codebuddy / 其他支持 Skills 的客户端
+或手动 `git clone` 到本地 skills 目录（如 `~/.claude/skills/axm/`）。
 
-参考该客户端关于 Skills 目录的文档，把本仓库放进去。
+## 用法
 
-### 完全不用 AI（纯脚手架）
+### 给一个新项目初始化
 
-axm 的三个脚本本身也可以独立跑，见 [手动使用脚本](#手动使用脚本)。
+到项目根目录，对 AI 说：
 
-## 使用（让 AI 调用）
+```
+帮我初始化 axm
+```
 
-安装好后，在任何新项目根目录下对 AI 说：
+AI 会按 5 阶段 SOP 执行（详见 `SKILL.md`）：
 
-> "帮我初始化 axm。"
-
-AI 会自动加载 `axm` skill、走完整 5 阶段 SOP：
-
-| 阶段 | 执行方 | 做什么 |
+| 阶段 | 谁做 | 做什么 |
 |---|---|---|
-| **Phase 1 Discover** | AI | 扫 `package.json` / `Cargo.toml` / 目录结构，输出项目画像给你确认 |
-| **Phase 2 Scaffold** | 脚本 | 释放 `.axm/universal/*` 4 份规范 + 索引骨架 + `AGENTS.md` 骨架 |
-| **Phase 3 Author** | AI | 基于项目画像写 `project/architecture.md` / `coding.md` / `knowledge/<system>/overview.md`，补全 `AGENTS.md` 的路由表 |
-| **Phase 4 Validate** | 脚本 | 机械校验 axm-meta / index 一致性 / code-refs 真实性；有 error 回 Phase 3 |
-| **Phase 5 Handoff** | AI | 输出完成清单 + 后续 TODO |
+| 1. Discover | AI | 扫源码、生成项目画像，给你确认 |
+| 2. Scaffold | 脚本 | 释放 `.axm/universal/` 4 份通用规范 + 索引骨架 + `AGENTS.md` 骨架 |
+| 3. Author | AI | 写项目特有的 `architecture.md` / `coding.md` / `knowledge/<system>/overview.md`，补全 `AGENTS.md` 路由表 |
+| 4. Validate | 脚本 | 校验 axm-meta、index 一致性、code-refs 真实性 |
+| 5. Handoff | AI | 输出完成清单与 TODO |
 
-完成后你的仓库会多出：
+### 已有项目接 axm
+
+- 已有 `AGENTS.md` 但没有 `.axm/`：直接走 5 阶段，scaffold 默认跳过 `AGENTS.md`，AI 后续手动补 Knowledge Index 段
+- 已有 `.axm/` 怀疑漂移：跑 Phase 4 校验即可
+- 改过 `.axm/**/*.md` 后索引乱了：跑 reindex 同步
+
+### 管理开发进度与 BUG
+
+- **roadmap / spec**：`progress/<initiative>/{roadmap.md, specs/<spec>.md}`，验收标准固定分为 *AI 自动验收* + *人类验收*
+- **BUG**：`progress/<initiative>/bugs/<bug-id>.md`，自带优先级（P0–P3）、严重度（Blocker–Trivial）、固定 8 状态生命周期（`open` → `in-progress` → `fixed` → `verified` → `closed`，可走 `reopened` / `wont-fix` / `duplicate`）；BUG 必须挂在某个 initiative 下，找不到归属时新建一个（推荐 `progress/quality/`）
+
+对 AI 说"用 axm 提一个 BUG" / "把这个 spec 闭合掉" 即可，AI 会自动遵循 `references/bug-doc-guide.md` 与 `references/progress-doc-guide.md` 的契约。
+
+## 产物长什么样
 
 ```
 <your-project>/
-├── AGENTS.md                    # AI 根入口（含 .axm 召回声明、Knowledge Index）
+├── AGENTS.md                       # AI 根入口（含 .axm 召回声明、Knowledge Index）
 └── .axm/
-    ├── index.md                # 一级分区索引
-    ├── universal/               # 跨项目通用规范（4 份 + index）
-    │   ├── devloop.md          # DEVLOOP 状态机（意图 → 分级 → 分支 → 验证 → 交付）
-    │   ├── quality.md          # 测试策略 + 质量门禁
-    │   ├── docs.md             # 四套 axm-meta 骨架（A/B/C/D）契约
-    │   └── vcs.md              # 分支策略 + 提交规范
-    ├── project/                 # 项目特有规范（AI 按实际写）
-    │   ├── architecture.md     # 模块划分、依赖方向、硬约束
-    │   └── coding.md           # 工具链、语言风格
-    ├── knowledge/               # 项目知识（AI 按实际写）
-    │   └── <system>/
-    │       └── overview.md
-    └── progress/                # 开发进度（roadmap、spec、验收状态）
+    ├── index.md
+    ├── universal/                  # 跨项目通用"宪法"
+    │   ├── docs.md                 # 四套 axm-meta 骨架契约
+    │   ├── devloop.md              # DEVLOOP 状态机
+    │   ├── quality.md              # 测试策略 + 质量门禁
+    │   └── vcs.md                  # 分支 + 提交规范
+    ├── project/                    # 项目特有规范（AI 写）
+    │   ├── architecture.md
+    │   └── coding.md
+    ├── knowledge/                  # 项目知识（AI 写）
+    │   └── <system>/overview.md
+    └── progress/
         └── <initiative>/
             ├── roadmap.md
-            └── specs/
-                └── <spec>.md
+            ├── specs/<spec>.md
+            └── bugs/<bug-id>.md
 ```
 
-## 手动使用脚本
+## 直接调用脚本
 
-如果你不想让 AI 自动走 5 阶段，或要在 CI 里加校验，三个脚本都可独立调用：
-
-### scaffold（释放通用规范）
+跳过 AI、放进 CI 或自动化时可独立使用：
 
 ```bash
+# 释放骨架（默认拒绝覆盖；--force 才覆盖）
 node /path/to/axm/scripts/scaffold.mjs \
-  --owner=<你的团队/个人标识> \
-  --date=2026-05-07 \
-  --project-name=<项目名> \
-  --target=<项目根> \
-  [--force]
+  --owner=<team-or-name> --date=2026-05-14 \
+  --project-name=<name> --target=<repo-root>
+
+# 校验契约（exit 0 PASS / 1 error / 2 warn）
+node /path/to/axm/scripts/validate.mjs --target=<repo-root>
+
+# 同步 index（保留已有顺序，追加孤儿，删除失效）
+node /path/to/axm/scripts/reindex.mjs --target=<repo-root> [--dry-run]
 ```
 
-默认拒绝覆盖已有文件。输出 manifest（created / skipped / overwritten）。
+校验四件事：axm-meta 字段完整性 + 日期格式、`index.md` 与同目录实际文件双向一致、`knowledge/**` 的 `code-refs` 指向的源码真实存在、`AGENTS.md` Knowledge Index 引用的 `.axm` 路径可达。
 
-### validate（校验契约）
+## 设计取舍
 
-```bash
-node /path/to/axm/scripts/validate.mjs --target=<项目根>
-```
+**AI 判断 + 脚本机械**。脚本负责跨项目逐字一致的内容（漂移会让多项目维护者抓狂），AI 负责必须读代码才写得对的内容（架构、源码地图、任务路由）。
 
-退出码：`0` 全 PASS / `1` 有 error / `2` 仅 warn。
+**零 npm 依赖**。`git clone` 即用，不需要 `npm install`。三个脚本加起来约 600 行，全部是 Node 内置模块。
 
-四类检查：
-- axm-meta 四套骨架（A/B/C/D）字段完整性 + 日期格式
-- 每份 `index.md` 的 `entries` 与同目录实际 `.md`/子目录双向一致
-- `knowledge/**` 的 `code-refs` 指向的源码真实存在
-- `AGENTS.md` 的 Knowledge Index 表引用的 `.axm` 路径可达
-
-### reindex（同步索引）
-
-```bash
-node /path/to/axm/scripts/reindex.mjs --target=<项目根> [--dry-run]
-```
-
-保留已有 `entries` 的顺序与 `title`/`when-to-read`，追加孤儿（标 TODO 占位），删除失效条目。原子写入（`.tmp` + `rename`）。
-
-## 仓库结构
-
-```
-axm/
-├── SKILL.md                 # Agent Skill 入口（name + description + 5 阶段 SOP）
-├── README.md                # 本文件
-├── AGENTS.md                # 本仓库维护入口规则
-├── references/              # AI Phase 3 按需加载的写作指南
-│   ├── axm-meta-contracts.md
-│   ├── project-spec-guide.md
-│   ├── knowledge-doc-guide.md
-│   ├── progress-doc-guide.md
-│   └── agents-md-guide.md
-├── templates/               # 脚本逐字释放的 .tpl 模板
-│   ├── AGENTS.md.tpl
-│   └── axm/
-└── scripts/                 # 零依赖 Node 脚本
-    ├── scaffold.mjs
-    ├── validate.mjs
-    ├── reindex.mjs
-    └── _lib/                # 共享模块
-        ├── frontmatter.mjs  # 极简 axm metadata 解析器
-        ├── axm-walker.mjs
-        └── logger.mjs
-```
-
-## 维护与验证
-
-本仓库不再把自身作为 axm target。维护 skill 包时，以根目录的 `SKILL.md`、`references/`、`templates/` 与 `scripts/` 为准；验证输出结构时，用临时目录模拟一个用户项目。
-
-推荐 smoke test：
-
-```bash
-cd /path/to/axm
-
-SMOKE_DIR="${TMPDIR:-/tmp}/axm-smoke-$(date +%Y%m%d%H%M%S)"
-node scripts/scaffold.mjs \
-  --owner=smoke \
-  --date=2026-05-12 \
-  --project-name=smoke \
-  --target="$SMOKE_DIR"
-
-node scripts/validate.mjs --target="$SMOKE_DIR"
-node scripts/reindex.mjs --target="$SMOKE_DIR"
-
-grep -R "{{" "$SMOKE_DIR" || true
-```
-
-期望结果：validate 为 `0 error(s), 0 warning(s)`，reindex 无失败，生成文件里没有未替换的 `{{...}}`。
+**契约严过头一点点**。AI 基于确定字段做路由决策，契约越严、推理越稳。对人类来说写 axm-meta 的成本远低于每次猜"这字段该填什么"的成本。
 
 ## FAQ
 
-### 我已经有 `AGENTS.md` 了，axm 会覆盖它吗？
+**会覆盖我已有的 `AGENTS.md` 吗？**
+不会。scaffold 默认 skip，需要 `--force` 才覆盖。
 
-不会。scaffold 默认拒绝覆盖任何已存在文件，会在 manifest 里列出 "skipped"。你需要 `--force` 才会覆盖。
-
-### 为什么四套 axm-meta 骨架要搞得这么严格？
-
-因为 `.axm/` 的目标读者是 **AI**。AI 基于确定的字段做路由决策，契约越严、推理越稳。对人类维护来说，写 axm-meta 的成本远低于每次读文档都要猜"这个字段该填什么"的成本。
-
-### universal 4 份规范能改吗？
-
-可以改，但**要改的是 `templates/axm/universal/*.md.tpl`**（skill 包本体），不是某个用户项目里的副本。理由：跨项目逐字一致是 universal 的核心价值。如果每个项目的 `devloop.md` 都长得不一样，AI 就得每次重新读。
-
-### 脚本为什么要零 npm 依赖？
-
-用户 `git clone` 后应该立即可用，无需 `npm install` / `pnpm install` 步骤。三个脚本加起来 ~600 行，Node 内置模块完全够用，不值得为 `js-yaml` / `commander` 等引入依赖地狱。
-
-### 我想加一个 "axm upgrade" 命令同步 universal 升级
-
-**目前不提供**。理由：升级场景相对低频，`git pull && node scripts/scaffold.mjs --force` 已经能解决 80% 的情况；剩下的边界情况让 AI 帮你做 diff 合并比脚本更可靠。真需要的话欢迎提 issue。
-
-### validate 报了一堆 WARN，能忽略吗？
-
-WARN（退出码 2）是"可接受但值得看一眼"的信号。最常见是"孤儿子项未登记到 entries"——跑一下 `reindex.mjs` 就好。长期 WARN 说明你 `.axm/` 有漂移，记得审查。
-
-### 这和 Cursor 的 `.cursorrules` / Claude 的 `CLAUDE.md` 冲突吗？
-
-不冲突。axm 用的是业界开放标准 `AGENTS.md`（Claude Code / Codebuddy / Codex 等默认识别）。如果你的客户端只吃 `CLAUDE.md` / `.cursorrules`，创建一个转发文件即可：
-
+**与 `CLAUDE.md` / `.cursorrules` 冲突吗？**
+不冲突。`AGENTS.md` 是开放标准。客户端只读 `CLAUDE.md` 时建一个转发文件即可：
 ```md
 # CLAUDE.md
 See [AGENTS.md](./AGENTS.md) for the canonical AI context.
 ```
 
-## 许可
+**universal 4 份规范怎么改？**
+改 axm 仓库本体里的 `templates/axm/universal/*.tpl`，不是某个用户项目里的副本。跨项目逐字一致是 universal 的核心价值。
+
+**有 `axm upgrade` 同步 universal 升级吗？**
+没有。`git pull && node scripts/scaffold.mjs --force` 解决大部分情况；边缘场景让 AI 做 diff 合并比脚本可靠。
+
+## License
 
 MIT
