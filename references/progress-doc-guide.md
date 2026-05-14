@@ -19,21 +19,16 @@ progress/<initiative>/
 ├── index.md
 ├── roadmap.md
 ├── decisions.md
-└── specs/
+├── specs/
+│   ├── index.md
+│   └── <spec>.md
+└── bugs/                # 该主题的 BUG（可选）
     ├── index.md
-    └── <spec>.md
+    ├── log.md           # BUG 看板汇总（骨架 D, progress-type=roadmap）
+    └── <bug-id>.md      # 单条 BUG（骨架 D, progress-type=bug）
 ```
 
-并列于各 `<initiative>/` 之外，可选地存在一个项目级 BUG 管理目录：
-
-```
-progress/bugs/
-├── index.md
-├── log.md           # BUG 看板汇总（骨架 D, progress-type=roadmap）
-└── <bug-id>.md      # 单条 BUG（骨架 D, progress-type=bug）
-```
-
-BUG 管理是面向 AI 的通用规范，不限测试类型（API/UI/单测/人工皆适用）。详细写作规则见 `bug-doc-guide.md`。
+BUG 管理是面向 AI 的通用规范，不限测试类型（API/UI/单测/人工皆适用）。**BUG 必须挂在某个 initiative 下**，不可在 `progress/` 顶层另建 `bugs/`；若 BUG 没有现成的归属主题，应先新建一个 initiative（如 `progress/quality/`、`progress/<module>/`）。详细写作规则见 `bug-doc-guide.md`。
 
 ## roadmap.md
 
@@ -141,7 +136,7 @@ related:
 - `roadmap`
 - `spec`
 - `decision`
-- `bug`（仅用于 `progress/bugs/<bug-id>.md`，详见 `bug-doc-guide.md`）
+- `bug`（仅用于 `progress/<initiative>/bugs/<bug-id>.md`，`initiative` 字段填实际主题名而非 `bugs`；详见 `bug-doc-guide.md`）
 
 ## 自查清单
 

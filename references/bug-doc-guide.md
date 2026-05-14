@@ -1,34 +1,68 @@
 # bugs/ BUG 管理写作指南
 
-> 本文指导 AI（含测试 agent）在 `.axm/progress/bugs/**/*.md` 下管理项目级 BUG。这是面向 AI 的**通用** BUG 管理规范，不限技术栈与测试类型：API 测试、UI 测试、单元测试、人工探索测试、生产事故复盘，凡是产出"缺陷"事实的场景都走这套规范。
+> 本文指导 AI（含测试 agent）在 `.axm/progress/<initiative>/bugs/**/*.md` 下管理 BUG。这是面向 AI 的**通用** BUG 管理规范，不限技术栈与测试类型：API 测试、UI 测试、单元测试、人工探索测试、生产事故复盘，凡是产出"缺陷"事实的场景都走这套规范。
 >
 > 设计目标：让任何 AI 接手"测出/修/验收/关闭/重开 BUG"任务时，都能从同一处文档结构中拿到上下文，不会因为提交人或工具不同而漂移。
 
 ## 目录定位
 
-`progress/bugs/` 与 `progress/<initiative>/` 同级：
+BUG **必须挂在某个 initiative 下**，与该主题的 roadmap / specs 同级：
 
-| 维度 | bugs/ | <initiative>/ |
+```
+progress/<initiative>/
+├── index.md
+├── roadmap.md
+├── specs/
+└── bugs/                  # 该主题的 BUG
+    ├── index.md
+    ├── log.md
+    └── <bug-id>.md
+```
+
+| 维度 | <initiative>/bugs/ | <initiative>/roadmap.md & specs/ |
 |---|---|---|
-| 关注点 | 单点缺陷（事实） | 阶段开发（计划） |
+| 关注点 | 该主题下的单点缺陷（事实） | 该主题的阶段开发（计划） |
 | 文档形状 | 一 BUG 一文件 + 一个看板 log | roadmap + specs |
-| 进入条件 | 测试 agent / 人类发现可复现的缺陷 | 用户明确开始一个开发主题 |
+| 进入条件 | 测试 agent / 人类在该主题范围内发现可复现的缺陷 | 用户明确开始一个开发阶段 |
 | 退出条件 | BUG `closed` 或 `wont-fix` / `duplicate` | initiative 闭合 |
 
-BUG 不应混入某个 `<initiative>/` 内部——它是横切关注点，由测试 agent 独立提交，由开发 agent / 人类消费。
+### 为什么不放在 `progress/bugs/` 顶层
+
+`progress/` 的一级目录语义是 **initiative（开发主题）**。把 `bugs/` 提到与 initiative 同级会破坏这一约束，导致：
+
+- BUG 与所属业务/模块的关联只能靠正文 `影响模块` 字段维系，弱关联
+- 看板被迫做"全项目大杂烩"，跨主题分流困难
+- 闭合 initiative 时无法连带审视相关 BUG 是否仍未关闭
+
+正确做法：**BUG 永远挂在某个 initiative 下**。如果某条 BUG 暂时找不到归属主题，**必须新建一个 initiative**（见下节）来承载它。
+
+## 没有主题归属时怎么办
+
+凡是缺陷都有归属。出现"没法归到现有主题"时，按以下顺序处理：
+
+1. **优先复用现有 initiative**：尝试把 BUG 归到最相关的现有 initiative（哪怕只是松散相关）。优先级：精确模块匹配 > 同子系统 > 同生命周期阶段
+2. **新建专用 initiative**：仍无法归属时，新建一个 initiative。常见命名：
+   - `progress/quality/`：跨模块质量、回归、稳定性问题（推荐默认收纳点）
+   - `progress/ops/` 或 `progress/incidents/`：生产事故、运维侧问题
+   - `progress/<module-name>/`：某个独立模块（如 `progress/auth/`、`progress/billing/`）尚未启动 roadmap 但已有 BUG 进入
+3. **新建的 initiative 必须包含 `index.md`**（骨架 C）；`roadmap.md` 可选——若该主题暂无开发计划，只放 `bugs/` 也允许，但 `index.md` 必须存在并登记 `bugs/`
+
+**禁止**直接把 BUG 文件丢在 `progress/` 根目录或不带 initiative 的位置。
 
 ## 建议结构
 
 ```
-progress/bugs/
-├── index.md                # 骨架 C：BUG 入口索引
-├── log.md                  # 骨架 D, progress-type=roadmap：BUG 看板汇总
+progress/<initiative>/bugs/
+├── index.md                # 骨架 C：本主题 BUG 入口索引
+├── log.md                  # 骨架 D, progress-type=roadmap：本主题 BUG 看板汇总
 └── <bug-id>.md             # 骨架 D, progress-type=bug：单条 BUG
 ```
 
 - `bugs/index.md`：登记 `log.md` 与所有 `<bug-id>.md`。`reindex.mjs` 会自动同步。
-- `bugs/log.md`：BUG 看板，列出所有未关闭 BUG（状态分布、优先级分布、Top N 待修），相当于 roadmap。
+- `bugs/log.md`：本主题的 BUG 看板，列出所有未关闭 BUG（状态分布、优先级分布、Top N 待修）。
 - `<bug-id>.md`：每条 BUG 一份独立文档；**关闭后不删除**，作为历史证据。
+
+> 跨主题 BUG 总览：不再维护单一全局看板；如需"全项目所有未关闭 BUG"视图，AI 应遍历各 `progress/<initiative>/bugs/log.md` 临时聚合，不创建顶层 `progress/bugs/`。
 
 ## BUG ID 与文件命名
 
@@ -41,7 +75,7 @@ progress/bugs/
 - 同一天多条同主题 BUG，slug 加序号后缀：`-2`、`-3`
 - BUG ID（正文 `id` 字段）= 文件名去掉 `.md`
 
-> 注意：尽管命名包含日期，仍属于 axm 的"日期前缀"禁令豁免——BUG 是带时间属性的事实记录，与"plan 类"日期前缀（被禁）语义不同。但**仅限 `bugs/<bug-id>.md`**；其他文档不享受此豁免。
+> 注意：尽管命名包含日期，仍属于 axm 的"日期前缀"禁令豁免——BUG 是带时间属性的事实记录，与"plan 类"日期前缀（被禁）语义不同。但**仅限 `<initiative>/bugs/<bug-id>.md`**；其他文档不享受此豁免。
 
 ## 单条 BUG 文档骨架
 
@@ -51,9 +85,10 @@ status: active
 last-reviewed: 2026-05-14
 owner: qa-team
 progress-type: bug
-initiative: bugs
+initiative: auth-redesign
 related:
-  - ../../knowledge/<system>/overview.md
+  - ../../../knowledge/<system>/overview.md
+  - ../roadmap.md
 -->
 
 # bug-2026-05-14-login-timeout — 登录接口在弱网下 30s 超时未提示
@@ -63,6 +98,7 @@ related:
 | 字段 | 值 |
 |---|---|
 | ID | `bug-2026-05-14-login-timeout` |
+| 所属 initiative | `auth-redesign` |
 | 提交人 | api-tester（AI） |
 | 提交时间 | 2026-05-14 |
 | 优先级 | P1 |
@@ -71,7 +107,7 @@ related:
 | 影响模块 | `apps/web/auth`、`packages/api-client` |
 | 影响版本 | `v1.4.2` |
 | 关联 PR / commit | （修复后填） |
-| 关联 spec / roadmap | `../auth-redesign/specs/phase-2.md`（可选） |
+| 关联 spec / roadmap | `../specs/phase-2.md`（可选） |
 
 ## 复现步骤
 
@@ -131,8 +167,9 @@ related:
 | 区块 | 字段 | 写什么 |
 |---|---|---|
 | axm-meta | `progress-type: bug` | 固定值 |
-| axm-meta | `initiative: bugs` | 固定值 |
+| axm-meta | `initiative: <所属主题名>` | 与所在 `progress/<initiative>/` 目录名一致；禁止填 `bugs` |
 | 元信息 | ID | 与文件名一致 |
+| 元信息 | 所属 initiative | 与 axm-meta `initiative` 一致 |
 | 元信息 | 提交人 | AI agent 名或人名 |
 | 元信息 | 优先级 | P0 / P1 / P2 / P3 |
 | 元信息 | 严重度 | Blocker / Critical / Major / Minor / Trivial |
@@ -222,9 +259,9 @@ related:
 4. **`wont-fix` / `duplicate`** 必须写理由或重复指向；这两个终态视同 `closed`，但保留语义区分
 5. **关闭后不删除文件**；如需归档大量旧 BUG，可整体改 `status: deprecated`，但文件保留
 
-## BUG 看板 `bugs/log.md`
+## BUG 看板 `<initiative>/bugs/log.md`
 
-`log.md` 是 BUG 总览，骨架 D，`progress-type: roadmap`，`initiative: bugs`。
+`log.md` 是本主题的 BUG 总览，骨架 D，`progress-type: roadmap`，`initiative` 与所在主题一致（**禁止写 `bugs`**）。
 
 ```markdown
 <!-- axm-meta
@@ -232,10 +269,10 @@ status: active
 last-reviewed: 2026-05-14
 owner: qa-team
 progress-type: roadmap
-initiative: bugs
+initiative: auth-redesign
 -->
 
-# BUG 看板
+# auth-redesign — BUG 看板
 
 ## 状态分布
 
@@ -272,23 +309,28 @@ initiative: bugs
 
 | 场景 | 处理 |
 |---|---|
-| BUG 修复涉及架构/接口变更 | 不要在 BUG 文档里写设计；开一份 `progress/<initiative>/specs/<spec>.md` 走正常 spec 流程，BUG 文档关联 spec 链接 |
+| BUG 修复涉及架构/接口变更 | 不要在 BUG 文档里写设计；在同一 `<initiative>/specs/<spec>.md` 走正常 spec 流程，BUG 文档关联 spec 链接 |
 | BUG 暴露的系统事实需要长期记录 | 关闭时把事实沉淀到 `knowledge/<system>/<topic>.md`，BUG 文档 `related` 加链接 |
 | BUG 修复产生新回归测试 | 测试代码路径写入 BUG 的"AI 自动验收"区块；同时如该测试覆盖核心场景，写入 `project/coding.md` 或 `knowledge/` 测试约定 |
 | BUG 反映长期规范缺失 | 不要把规则塞进 BUG 文档；由人类决策后写入 `project/*.md` |
-| 用户问"现在有哪些 BUG" | 读 `bugs/log.md`；如需详情再读对应 `<bug-id>.md` |
+| 用户问"本主题有哪些 BUG" | 读对应 `<initiative>/bugs/log.md`；如需详情再读 `<bug-id>.md` |
+| 用户问"全项目有哪些未关闭 BUG" | 遍历所有 `progress/*/bugs/log.md` 临时聚合，**不要**创建顶层 `progress/bugs/` |
 
 ## 测试 agent 提交 BUG 的标准流程
 
 测试 agent（如 API Tester、UI Tester 等）发现缺陷后：
 
 1. **复现确认**：至少独立复现 2 次；若只能间歇复现，必须在文档中写"间歇复现率 N/M"
-2. **查重**：在 `bugs/` 下用文件名 / 标题搜索，确认非 `duplicate`
-3. **创建文件**：按命名规则生成 `<bug-id>.md`，骨架完整填齐
-4. **登记看板**：在 `bugs/log.md` 的"未关闭 BUG"表追加一行
-5. **更新索引**：跑 `node <skill-path>/scripts/reindex.mjs --target=<项目根> --dry-run`，确认无误后落盘
-6. **校验契约**：跑 `node <skill-path>/scripts/validate.mjs --target=<项目根>`，确保零 ERROR
-7. **不擅自接单**：测试 agent 提交即可，不要把状态从 `open` 直接改为 `in-progress`（除非用户/team-lead 明确分派）
+2. **确定归属 initiative**：判断该 BUG 应挂在哪个 `progress/<initiative>/` 下
+   - 优先匹配现有 initiative
+   - 现有都不合适：新建 initiative（如 `progress/quality/`、`progress/<module>/`），先建 `<initiative>/index.md`（骨架 C）
+3. **确保 bugs 子目录存在**：`<initiative>/bugs/{index.md, log.md}` 不存在则创建
+4. **查重**：在该 `<initiative>/bugs/` 下（必要时跨 initiative）用文件名 / 标题搜索，确认非 `duplicate`
+5. **创建 BUG 文件**：按命名规则生成 `<initiative>/bugs/<bug-id>.md`，骨架完整填齐；`initiative` 字段填实际主题名而非 `bugs`
+6. **登记看板**：在 `<initiative>/bugs/log.md` 的"未关闭 BUG"表追加一行
+7. **更新索引**：跑 `node <skill-path>/scripts/reindex.mjs --target=<项目根> --dry-run`，确认无误后落盘
+8. **校验契约**：跑 `node <skill-path>/scripts/validate.mjs --target=<项目根>`，确保零 ERROR
+9. **不擅自接单**：测试 agent 提交即可，不要把状态从 `open` 直接改为 `in-progress`（除非用户/team-lead 明确分派）
 
 ## 开发 agent 修复 BUG 的标准流程
 
@@ -312,31 +354,36 @@ initiative: bugs
 
 1. 状态改 `closed`，时间线追加关闭说明
 2. 长期事实若未同步，补到 `knowledge/`
-3. `bugs/log.md` 把该 BUG 从"未关闭"移到"最近关闭"
+3. 所在 `<initiative>/bugs/log.md` 把该 BUG 从"未关闭"移到"最近关闭"
 4. 文件**保留**不删除
 5. 跑 `reindex.mjs` 与 `validate.mjs`
 
 ## 反模式（禁止）
 
+- ❌ 在 `progress/` 顶层创建 `bugs/`（必须挂在某个 initiative 下）
+- ❌ axm-meta 把 `initiative` 写成 `bugs`（应填实际主题名）
+- ❌ 把 BUG 文件丢进 `progress/` 根目录或不带 initiative 的位置
 - ❌ 把多条 BUG 合并在一个文件里
 - ❌ 用"修复中、待发布、灰度中"等非状态机词替代 8 个标准状态
 - ❌ 直接覆盖时间线历史
 - ❌ BUG 关闭就删除文件
 - ❌ 在 BUG 文档里写架构设计（应另开 spec）
 - ❌ 让 BUG 看板与单条文档长期不一致
-- ❌ 把"未复现 / 描述不清"的反馈当 BUG 提交——这类先放在外部 issue tracker 或根目录草稿，确认可复现后再进 `bugs/`
+- ❌ 把"未复现 / 描述不清"的反馈当 BUG 提交——这类先放在外部 issue tracker 或根目录草稿，确认可复现后再进 `<initiative>/bugs/`
 - ❌ 修改 `wont-fix` / `duplicate` 文档的元信息却不更新看板
 
 ## 自查清单
 
+- [ ] BUG 文件位于 `progress/<initiative>/bugs/` 下，而非 `progress/bugs/`
 - [ ] 文件名符合 `bug-YYYY-MM-DD-<slug>.md` 模式
-- [ ] axm-meta `progress-type: bug` 且 `initiative: bugs`
-- [ ] 元信息表至少含 ID / 提交人 / 优先级 / 严重度 / 当前状态 / 影响模块
+- [ ] axm-meta `progress-type: bug`，`initiative` 与所在 `<initiative>/` 目录名一致（不写 `bugs`）
+- [ ] 元信息表至少含 ID / 所属 initiative / 提交人 / 优先级 / 严重度 / 当前状态 / 影响模块
 - [ ] 复现步骤可机械执行
 - [ ] 期望表现与实际表现都可观察
 - [ ] 修复验收标准分 AI 自动验收 + 人类验收
 - [ ] 时间线追加而非覆盖
 - [ ] 状态值在 8 个标准状态内
-- [ ] 已在 `bugs/log.md` 登记
-- [ ] `bugs/index.md` entries 与实际文件一致（必要时跑 reindex）
+- [ ] 已在 `<initiative>/bugs/log.md` 登记
+- [ ] `<initiative>/bugs/index.md` entries 与实际文件一致（必要时跑 reindex）
+- [ ] 若新建了 initiative 承载该 BUG，已建 `<initiative>/index.md`
 - [ ] 关闭时长期事实已同步到 `knowledge/`

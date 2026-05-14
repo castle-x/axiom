@@ -166,17 +166,17 @@ related:
         └── <topic>.md          # 骨架 B, depth=deep
 └── progress/
     ├── index.md                # 骨架 C：开发进度入口
-    ├── bugs/                   # BUG 管理（可选）
-    │   ├── index.md            # 骨架 C：BUG 索引
-    │   ├── log.md              # 骨架 D, progress-type=roadmap（BUG 看板/汇总）
-    │   └── <bug-id>.md         # 骨架 D, progress-type=bug
     └── <initiative>/
         ├── index.md            # 骨架 C：某个开发主题索引
         ├── roadmap.md          # 骨架 D, progress-type=roadmap
         ├── decisions.md        # 骨架 D, progress-type=decision（可选）
-        └── specs/
+        ├── specs/
+        │   ├── index.md        # 骨架 C
+        │   └── <spec>.md       # 骨架 D, progress-type=spec
+        └── bugs/               # 本主题 BUG 管理（可选）
             ├── index.md        # 骨架 C
-            └── <spec>.md       # 骨架 D, progress-type=spec
+            ├── log.md          # 骨架 D, progress-type=roadmap（BUG 看板）
+            └── <bug-id>.md     # 骨架 D, progress-type=bug
 ```
 
 **索引链路**（AI 查找规范/知识的路径）：
@@ -293,11 +293,13 @@ spec 可由 Superpowers、OpenSpec、人工讨论或其他外部方法生成；a
 
 ### 11.4 Bug
 
-`progress/bugs/` 承载项目级 BUG 管理，是面向 AI 的通用 BUG 管理规范（不限于 API 测试，任何测试 agent 产出的缺陷都走这里）。
+`<initiative>/bugs/` 承载该主题下的 BUG 管理，是面向 AI 的通用 BUG 管理规范（不限于 API 测试，任何测试 agent 产出的缺陷都走这里）。
 
-- 每条 BUG 一份独立 `<bug-id>.md`，骨架 D、`progress-type: bug`、`initiative: bugs`
-- `bugs/log.md` 作为看板汇总，骨架 D、`progress-type: roadmap`，列出所有未关闭 BUG 与状态分布
-- BUG 文档必须写清：标题、优先级、复现步骤、期望/实际表现、影响范围、修复验收标准（AI 自动验收 + 人类验收）、当前状态
+- **BUG 必须挂在某个 initiative 下**（即 `progress/<initiative>/bugs/`），禁止在 `progress/` 顶层另建 `bugs/`
+- 若 BUG 无现成归属主题，应先新建 initiative（如 `quality/`、`<module>/`），再在其下开 `bugs/`
+- 每条 BUG 一份独立 `<bug-id>.md`，骨架 D、`progress-type: bug`、`initiative: <所属主题名>`（**禁止填 `bugs`**）
+- `<initiative>/bugs/log.md` 作为该主题 BUG 看板汇总，骨架 D、`progress-type: roadmap`，`initiative` 与主题一致
+- BUG 文档必须写清：标题、所属 initiative、优先级、复现步骤、期望/实际表现、影响范围、修复验收标准（AI 自动验收 + 人类验收）、当前状态
 - BUG 生命周期使用固定状态：`open` → `in-progress` → `fixed` → `verified` → `closed`；可回退到 `reopened`、`wont-fix`、`duplicate`
 - BUG ID 命名 kebab-case，例如 `bug-2026-05-14-login-timeout.md`；BUG 关闭后**不删除**文档，保留为历史证据
 - BUG 修复并验收通过后，若产生长期系统事实或回归测试，应同步沉淀到 `knowledge/` 或 `project/`
