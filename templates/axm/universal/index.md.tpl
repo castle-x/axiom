@@ -15,6 +15,9 @@ entries:
   - path: vcs.md
     title: 版本控制规范
     when-to-read: 代码提交/分支操作前
+  - path: review.md
+    title: 二审 Review 规范
+    when-to-read: 用第二个 agent / 工具 / 模型做收尾 review 时
 -->
 
 # universal/ — 通用规范
@@ -29,3 +32,4 @@ entries:
 | `quality.md` | 测试策略、质量门禁、回归防护 | 编码完成/提交前 |
 | `docs.md` | 文档规范（axm metadata 骨架 / 命名 / 索引 / 审查） | 产出文档时 |
 | `vcs.md` | 版本控制（分支策略 / 原子提交 / 需求生命周期） | 代码变更时 |
+| `review.md` | 二审 Review 规范（七条契约 / 闭环循环 / 最终报告） | 用第二个 agent / 工具做收尾 review 时 |

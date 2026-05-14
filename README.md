@@ -8,7 +8,7 @@
 
 Axiom 把那份"你希望 AI 每次都已经知道的事情"沉淀成项目内的规范文档：
 
-- 跨项目逐字一致的"宪法"（DEVLOOP、文档契约、质量门禁、VCS 规范）由脚本释放
+- 跨项目逐字一致的"宪法"（DEVLOOP、文档契约、质量门禁、VCS 规范、二审 review 契约）由脚本释放
 - 项目特有的架构、模块边界、源码地图由 AI 读完代码后撰写
 - BUG / roadmap / spec 等阶段性内容用统一骨架管理
 - 整套契约由零依赖 Node 脚本机械校验，避免人工漂移
@@ -40,7 +40,7 @@ AI 会按 5 阶段 SOP 执行（详见 `SKILL.md`）：
 | 阶段 | 谁做 | 做什么 |
 |---|---|---|
 | 1. Discover | AI | 扫源码、生成项目画像，给你确认 |
-| 2. Scaffold | 脚本 | 释放 `.axm/universal/` 4 份通用规范 + 索引骨架 + `AGENTS.md` 骨架 |
+| 2. Scaffold | 脚本 | 释放 `.axm/universal/` 5 份通用规范 + 索引骨架 + `AGENTS.md` 骨架 |
 | 3. Author | AI | 写项目特有的 `architecture.md` / `coding.md` / `knowledge/<system>/overview.md`，补全 `AGENTS.md` 路由表 |
 | 4. Validate | 脚本 | 校验 axm-meta、index 一致性、code-refs 真实性 |
 | 5. Handoff | AI | 输出完成清单与 TODO |
@@ -69,7 +69,8 @@ AI 会按 5 阶段 SOP 执行（详见 `SKILL.md`）：
     │   ├── docs.md                 # 四套 axm-meta 骨架契约
     │   ├── devloop.md              # DEVLOOP 状态机
     │   ├── quality.md              # 测试策略 + 质量门禁
-    │   └── vcs.md                  # 分支 + 提交规范
+    │   ├── vcs.md                  # 分支 + 提交规范
+    │   └── review.md               # 二审 review 七条契约
     ├── project/                    # 项目特有规范（AI 写）
     │   ├── architecture.md
     │   └── coding.md

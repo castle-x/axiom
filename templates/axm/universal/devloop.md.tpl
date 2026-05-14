@@ -6,6 +6,7 @@ applies-to: [universal]
 related:
   - ./vcs.md
   - ./quality.md
+  - ./review.md
 -->
 
 # DEVLOOP 状态机

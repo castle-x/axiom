@@ -10,7 +10,7 @@ description: |
 
 `.axm/` 是一套**给 AI 看的**项目上下文目录规范：用四类有契约的文档（规范 A / 知识 B / 索引 C / 进度 D）承载"这个项目怎么做、是什么、去哪读、做到哪里"，配合根目录 `AGENTS.md` 的 Knowledge Index 路由表，让 AI 接手任意任务前能快速定位需要的上下文。
 
-本 skill 的核心分工是"**AI 判断 + 脚本机械**"：脚本负责跨项目逐字一致的内容（4 份 universal 规范 + axm-meta 契约校验 + index 同步），因为这些一旦漂移就让多项目维护者抓狂；AI 负责只能读代码才写得对的部分（架构、模块边界、真实源码路径、Knowledge Index 任务路由），因为这些是 AI 扫一遍项目才知道的。两边各做自己擅长的，初始化完的那一刻既有可复用骨架，也有项目特有的血肉。
+本 skill 的核心分工是"**AI 判断 + 脚本机械**"：脚本负责跨项目逐字一致的内容（5 份 universal 规范 + axm-meta 契约校验 + index 同步），因为这些一旦漂移就让多项目维护者抓狂；AI 负责只能读代码才写得对的部分（架构、模块边界、真实源码路径、Knowledge Index 任务路由），因为这些是 AI 扫一遍项目才知道的。两边各做自己擅长的，初始化完的那一刻既有可复用骨架，也有项目特有的血肉。
 
 Skill 目录布局：
 
@@ -73,7 +73,7 @@ axm/
 
 ### Phase 2 Scaffold（脚本执行）
 
-**目标**：释放跨项目零差异的内容（universal 4 份规范 + 索引骨架 + AGENTS.md 骨架）。
+**目标**：释放跨项目零差异的内容（universal 5 份规范 + 索引骨架 + AGENTS.md 骨架）。
 
 **操作**：询问用户以下信息（能从项目画像推断的不用问）：
 - `owner`：这套文档的维护方标识（团队名或个人名，如 `core-team`、`yourname`）
@@ -94,10 +94,10 @@ node <skill-path>/scripts/scaffold.mjs \
 
 脚本会输出 manifest（created / skipped / overwritten 三类）。**把 manifest 原样转述给用户**，让他们知道哪些被跳过了。
 
-**产出**：目标仓库多出以下文件（10 个）：
+**产出**：目标仓库多出以下文件（11 个）：
 - `AGENTS.md`
 - `.axm/index.md`
-- `.axm/universal/{index,docs,devloop,quality,vcs}.md`
+- `.axm/universal/{index,docs,devloop,quality,vcs,review}.md`
 - `.axm/project/index.md`（空 entries）
 - `.axm/knowledge/index.md`（空 entries）
 - `.axm/progress/index.md`（空 entries）
@@ -147,7 +147,7 @@ deep 文档（具体话题）**本阶段不写**，只建目录和 overview；�
 
 把 scaffold 生成的 `AGENTS.md` 里两处 TODO 补齐：
 - **Architecture 段**（当前是 TODO 占位）：1-2 屏讲清技术栈、模块划分、依赖方向
-- **Knowledge Index 表**：在已有的 4 条 universal 条目下追加项目特有的"任务类型 → 文档"路由。5-15 条刚好
+- **Knowledge Index 表**：在已有的 5 条 universal 条目下追加项目特有的"任务类型 → 文档"路由。5-15 条刚好
 
 #### 3.5 更新相关 index.md
 
@@ -227,7 +227,7 @@ node <skill-path>/scripts/validate.mjs --target=<项目根绝对路径>
 
 ### 已创建（机械释放）
 - AGENTS.md
-- .axm/universal/{docs,devloop,quality,vcs}.md
+- .axm/universal/{docs,devloop,quality,vcs,review}.md
 - .axm/{index,universal/index,project/index,knowledge/index,progress/index}.md
 
 ### 已撰写（项目特有）
@@ -275,6 +275,6 @@ reindex 会保留已有 `entries` 的顺序和 title/when-to-read，只追加孤
 
 1. **Phase 2 之前不能写 .md**——通用规范由脚本释放，手写会跨项目漂移
 2. **Phase 4 ERROR 必须修**，不能视而不见交付
-3. **不要自作主张修改目标项目 `universal/` 下的 4 份文件**。那是跨项目"宪法"，需要变更时改 skill 里的 `templates/`，不是目标项目里的产物
+3. **不要自作主张修改目标项目 `universal/` 下的 5 份文件**。那是跨项目"宪法"，需要变更时改 skill 里的 `templates/`，不是目标项目里的产物
 
 （"code-refs 必须真实存在"、"deep 知识文档不主动写"已在 Phase 3.3 里讲过，不再单列。）

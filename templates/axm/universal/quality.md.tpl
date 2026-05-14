@@ -5,6 +5,7 @@ owner: {{owner}}
 applies-to: [universal]
 related:
   - ./devloop.md
+  - ./review.md
 -->
 
 # 质量保障规范
@@ -63,3 +64,5 @@ related:
 | 最小性 | 是否存在未请求的变更 |
 | 一致性 | 是否匹配现有代码风格 |
 | 安全性 | 是否引入安全隐患 |
+
+> 用第二个 agent / 工具做收尾 review 时（Codex review、Claude review、CI 静态检查、人工二审等），按 `review.md` 的七条契约执行；本节定义"看什么"，`review.md` 定义"怎么对待 review 结果"。
