@@ -280,16 +280,16 @@ reindex 会保留已有 `entries` 的顺序和 title/when-to-read，只追加孤
 用户想"启动预览器 / 查看器 / 浏览 axm"时，可以启动本地只读预览器：
 
 ```bash
-node <skill-path>/scripts/preview.mjs --target=<项目根> [--port=8765]
+node <skill-path>/scripts/preview.mjs [--target=<项目根>] [--port=8765]
 ```
 
 也可以使用兼容原型图的 Python 包装器：
 
 ```bash
-python3 <skill-path>/axm_preview.py --target=<项目根> [--port=8765]
+python3 <skill-path>/axm_preview.py [--target=<项目根>] [--port=8765]
 ```
 
-预览器只绑定 `127.0.0.1`，只提供 `GET /`、`GET /api/model`、`GET /api/health` 三类查看接口；Web UI 只展示 `AGENTS.md` 与 `.axm/` 文档、axm-meta、校验摘要、搜索结果和 Canvas 关系图，不提供 scaffold / validate / reindex 执行入口，也不会写入目标仓库。
+预览器只绑定 `127.0.0.1`；Web UI 可通过自带的最近项目下拉与 `Path` 输入框切换当前预览项目，并在浏览器本地保留最近打开路径，不调用系统文件选择器。除切换本 preview 进程的当前 target 外，预览器只展示 `AGENTS.md` 与 `.axm/` 文档、axm-meta、校验摘要、搜索结果和 Canvas 关系图，不提供 scaffold / validate / reindex 执行入口，也不会写入目标仓库。
 
 ## 关键约束（必须遵守）
 

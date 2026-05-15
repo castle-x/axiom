@@ -100,14 +100,14 @@ node /path/to/axm/scripts/validate.mjs --target=<repo-root>
 node /path/to/axm/scripts/reindex.mjs --target=<repo-root> [--dry-run]
 
 # 启动只读 localhost 预览器（纯 HTML + Canvas）
-node /path/to/axm/scripts/preview.mjs --target=<repo-root> [--port=8765]
+node /path/to/axm/scripts/preview.mjs [--target=<repo-root>] [--port=8765]
 # 或使用兼容原型图的启动方式
-python3 /path/to/axm/axm_preview.py --target=<repo-root> [--port=8765]
+python3 /path/to/axm/axm_preview.py [--target=<repo-root>] [--port=8765]
 ```
 
 校验四件事：axm-meta 字段完整性 + 日期格式、`index.md` 与同目录实际文件双向一致、`knowledge/**` 的 `code-refs` 指向的源码真实存在、`AGENTS.md` Knowledge Index 引用的 `.axm` 路径可达。
 
-预览器仅展示 `AGENTS.md` 与 `.axm/` 文档、索引关系、axm-meta、校验摘要和 code-refs 路径；Web UI 不提供任何执行或写入操作。
+预览器仅展示 `AGENTS.md` 与 `.axm/` 文档、索引关系、axm-meta、校验摘要和 code-refs 路径；Web UI 可通过自带的最近项目下拉与 `Path` 输入框切换当前预览项目，并在浏览器本地保留最近打开路径，但不调用系统文件选择器，不提供 scaffold / validate / reindex 执行入口，也不会写入目标仓库。
 
 ## 设计取舍
 

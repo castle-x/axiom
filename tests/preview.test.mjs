@@ -311,6 +311,51 @@ describe("AXM preview HTTP server", () => {
 		}
 	});
 
+	test("starts without a valid target and switches active targets at runtime", async () => {
+		const invalidRoot = fs.mkdtempSync(path.join(os.tmpdir(), "axm-preview-invalid-target-"));
+		tempRoots.push(invalidRoot);
+		const firstRoot = makeTempRepo();
+		const secondRoot = makeTempRepo();
+		const server = createPreviewServer({ target: invalidRoot });
+		await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+		const { port } = server.address();
+		const base = `http://127.0.0.1:${port}`;
+		try {
+			const missing = await fetch(`${base}/api/model`);
+			assert.equal(missing.status, 409);
+			assert.equal((await missing.json()).error, "target_not_selected");
+
+			const first = await fetch(`${base}/api/target`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ path: firstRoot }),
+			});
+			assert.equal(first.status, 200);
+			assert.equal((await first.json()).target.path, firstRoot);
+
+			const second = await fetch(`${base}/api/target`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ path: secondRoot }),
+			});
+			assert.equal(second.status, 200);
+			assert.equal((await second.json()).target.path, secondRoot);
+
+			const current = await fetch(`${base}/api/model`).then((res) => res.json());
+			assert.equal(current.target.path, secondRoot);
+
+			const invalid = await fetch(`${base}/api/target`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ path: invalidRoot }),
+			});
+			assert.equal(invalid.status, 400);
+			assert.equal((await invalid.json()).error, "target_missing_axm");
+		} finally {
+			await new Promise((resolve) => server.close(resolve));
+		}
+	});
+
 	test("preview html contains the expected app regions and no write-action copy", () => {
 		const html = buildPreviewHtml();
 
@@ -319,11 +364,35 @@ describe("AXM preview HTTP server", () => {
 		assert.match(html, /id="metaPanel"/);
 		assert.match(html, /id="graphCanvas"/);
 		assert.match(html, /id="searchInput"/);
+		assert.match(html, /id="projectCurrent"/);
+		assert.match(html, /id="projectName"/);
+		assert.match(html, /id="projectDropdown"/);
+		assert.match(html, /id="openProject"/);
+		assert.match(html, /id="manualProject"/);
+		assert.match(html, /id="pathDialog"/);
+		assert.match(html, /id="projectPathInput"/);
+		assert.match(html, /axmPreview:recentProjects/);
+		assert.match(html, /fetchJson\("\/api\/target"/);
+		assert.doesNotMatch(html, /fetchJson\("\/api\/pick-target"/);
+		assert.doesNotMatch(html, /window\.prompt/);
+		assert.doesNotMatch(html, /<select class="project-select"/);
+		assert.match(html, /--search-results-top/);
+		assert.match(html, /--search-results-left/);
+		assert.match(html, /--search-results-width/);
+		assert.match(html, /function positionSearchResults\(\)/);
+		assert.match(html, /closest\("\.searchbox"\)/);
+		assert.match(html, /getBoundingClientRect\(\)/);
+		assert.match(html, /setProperty\("--search-results-left"/);
+		assert.match(html, /if \(els\.results\.classList\.contains\("open"\)\) positionSearchResults\(\)/);
+		assert.doesNotMatch(html, /right: clamp\(12px, 11vw, 190px\)/);
 		assert.match(html, /id="validationRefresh"/);
+		assert.match(html, /class="refresh-btn" id="validationRefresh"/);
+		assert.match(html, /\.refresh-btn \{[\s\S]*border: 0;/);
+		assert.ok(html.indexOf('<span class="chip \' + statusClassName') < html.indexOf('id="validationRefresh"'));
 		assert.match(html, /refresh-cw/);
 		assert.match(html, /Contract check/);
 		assert.match(html, /function loadModel\(initial\)/);
-		assert.match(html, /fetch\("\/api\/model", \{ cache: "no-store" \}\)/);
+		assert.match(html, /fetchJson\("\/api\/model", \{ cache: "no-store" \}\)/);
 		assert.match(html, /loadModel\(false\)/);
 		assert.match(html, /checked " \+ axmDocs \+ " \.axm doc files/);
 		assert.match(html, /sanitizeMarkdownUrl\(href\)/);
@@ -344,6 +413,7 @@ describe("AXM preview HTTP server", () => {
 		assert.match(html, /class="stat-dot err"><\/span><span id="errorCount"/);
 		assert.doesNotMatch(html, /class="stat-dot ok"><\/span><span id="errorCount"/);
 		assert.doesNotMatch(html, /<span>validate\.mjs<\/span>/);
+		assert.doesNotMatch(html, /class="icon-btn refresh-btn"/);
 		assert.match(html, /findDoc\("\.axm\/index\.mdc"\)/);
 		assert.match(html, /index\\\.mdc\?/);
 		assert.match(html, /doc\.kind === "agents"\) return "AGENTS\.md"/);
@@ -355,14 +425,23 @@ describe("AXM preview HTTP server", () => {
 
 		assert.match(html, /Axiom Preview/);
 		assert.doesNotMatch(html, /AXM Preview/);
-		assert.doesNotMatch(html, /id="projectName"/);
+		assert.match(html, /id="projectName"/);
 		assert.doesNotMatch(html, /aria-label="设置"/);
 		assert.doesNotMatch(html, /lucide-settings/);
 		assert.match(html, /class="[^"]*lucide lucide-search/);
-		assert.match(html, /panel-bottom-close/);
 		assert.match(html, /file-text/);
 		assert.match(html, /graph-drawer/);
 		assert.match(html, /id="legendToggle"/);
+		assert.match(html, /class="icon-btn graph-toggle-btn" id="graphToggle"/);
+		assert.match(html, /aria-label="Expand graph"/);
+		assert.match(html, /aria-label", "Collapse graph"/);
+		assert.match(html, />Expand<\/button>/);
+		assert.match(html, /textContent = "Collapse"/);
+		assert.match(html, /textContent = "Expand"/);
+		assert.doesNotMatch(html, /panel-bottom-open/);
+		assert.doesNotMatch(html, /panel-bottom-close/);
+		assert.ok(html.indexOf('id="fitGraph"') < html.indexOf('id="zoomOut"'));
+		assert.ok(html.indexOf('id="graphToggle"') > html.indexOf('id="zoomIn"'));
 		assert.match(html, /aria-pressed="true"/);
 		assert.match(html, /\.legend\.hidden/);
 		assert.match(html, /rgba\(255,255,255,\.72\)/);
@@ -386,7 +465,14 @@ describe("AXM preview HTTP server", () => {
 		assert.match(html, /aria-expanded/);
 		assert.match(html, /renderTreeChildren\(model\.tree\.children \|\| \[\], 0, els\.tree\)/);
 		assert.match(html, /--tree-indent/);
-		assert.ok(html.includes("escapeHtml(node.name) + '</span>'"));
+		assert.match(html, /id="sideRootLabel"/);
+		assert.match(html, /\/\.axm"/);
+		assert.match(html, /--content-head-height: 48px/);
+		assert.match(html, /grid-template-rows: var\(--content-head-height\) 1fr 44px/);
+		assert.match(html, /grid-template-rows: var\(--content-head-height\) minmax\(0, 1fr\)/);
+		assert.match(html, /function treeDisplayName\(node\)/);
+		assert.match(html, /\.\.\/AGENTS\.md/);
+		assert.ok(html.includes("escapeHtml(treeDisplayName(node)) + '</span>'"));
 		assert.ok(!html.includes("escapeHtml(node.name) + '/</span>'"));
 		assert.match(html, /min-height: 26px/);
 		assert.match(html, /padding: 1px 0/);

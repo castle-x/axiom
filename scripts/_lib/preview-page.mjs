@@ -8,8 +8,6 @@ const ICON_PATHS = {
 	folder: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9L9.6 4A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path>',
 	"chevron-down": '<path d="m6 9 6 6 6-6"></path>',
 	"chevron-right": '<path d="m9 18 6-6-6-6"></path>',
-	"panel-bottom-open": '<rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M3 15h18"></path><path d="m9 9 3-3 3 3"></path>',
-	"panel-bottom-close": '<rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M3 15h18"></path><path d="m9 9 3 3 3-3"></path>',
 	"zoom-in": '<circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path><path d="M11 8v6"></path><path d="M8 11h6"></path>',
 	"zoom-out": '<circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path><path d="M8 11h6"></path>',
 	list: '<path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path>',
@@ -52,6 +50,7 @@ export function buildPreviewHtml() {
 	--yellow: #d89a0b;
 	--red: #d93f4b;
 	--shadow: 0 16px 48px rgba(31, 45, 61, .12);
+	--content-head-height: 48px;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
@@ -81,25 +80,145 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .brand-icon { color: #174ea6; flex: 0 0 auto; }
 .brand-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 18px; font-weight: 720; line-height: 1; }
-.command {
+.projectbar {
 	justify-self: start;
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
 	min-width: 0;
 	width: 100%;
-	max-width: 360px;
+	max-width: 430px;
 	height: 32px;
-	padding: 0 12px;
+	padding: 0 6px 0 10px;
 	border: 1px solid #b9d2f7;
 	border-radius: 6px;
 	background: #eef6ff;
 	color: #26374d;
-	font-family: SFMono-Regular, Menlo, Consolas, monospace;
 	font-size: 12px;
 	overflow: hidden;
 }
-.command span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.project-current {
+	min-width: 0;
+	flex: 1 1 auto;
+	height: 100%;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 0 8px 0 0;
+	border-radius: 5px;
+	color: #26374d;
+}
+.project-current:hover, .project-current[aria-expanded="true"] { background: #dfeeff; }
+.project-current .lucide-folder { flex: 0 0 auto; color: #174ea6; }
+.project-name {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 13px;
+	font-weight: 620;
+	text-align: left;
+}
+.project-chevron { flex: 0 0 auto; color: #68778a; }
+.project-current[aria-expanded="true"] .project-chevron { transform: rotate(180deg); }
+.project-popover {
+	position: fixed;
+	top: var(--project-menu-top, 52px);
+	left: var(--project-menu-left, 16px);
+	width: var(--project-menu-width, 360px);
+	display: none;
+	overflow: hidden;
+	border: 1px solid var(--border);
+	border-radius: 9px;
+	background: #fff;
+	box-shadow: var(--shadow);
+	z-index: 30;
+}
+.project-popover.open { display: block; }
+.project-option {
+	width: 100%;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 2px;
+	padding: 9px 12px;
+	text-align: left;
+}
+.project-option:hover, .project-option.active { background: var(--accent-soft); }
+.project-option-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 680; color: #263244; }
+.project-option-path { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--muted); }
+.project-popover-empty, .project-popover-error { padding: 12px; color: var(--muted); font-size: 12px; }
+.project-popover-error { color: var(--red); border-top: 1px solid var(--border); }
+.path-backdrop {
+	position: fixed;
+	inset: 0;
+	display: none;
+	align-items: flex-start;
+	justify-content: center;
+	padding-top: 92px;
+	background: rgba(29, 36, 48, .24);
+	z-index: 40;
+}
+.path-backdrop.open { display: flex; }
+.path-dialog {
+	width: min(560px, calc(100vw - 32px));
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	background: #fff;
+	box-shadow: var(--shadow);
+}
+.path-dialog-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 14px 16px 8px;
+}
+.path-dialog-title { font-size: 14px; font-weight: 720; color: #263244; }
+.path-close { width: 28px; height: 28px; border-radius: 6px; color: #68778a; }
+.path-close:hover { background: #f2f6fb; color: #263244; }
+.path-dialog-body { padding: 0 16px 16px; }
+.path-input {
+	width: 100%;
+	height: 38px;
+	padding: 0 11px;
+	border: 1px solid var(--border-strong);
+	border-radius: 7px;
+	outline: 0;
+	color: #263244;
+}
+.path-input:focus { border-color: #9ec2ff; box-shadow: 0 0 0 3px rgba(29,111,232,.12); }
+.path-error { min-height: 18px; margin-top: 8px; color: var(--red); font-size: 12px; }
+.path-dialog-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	padding: 0 16px 16px;
+}
+.path-secondary, .path-primary {
+	height: 30px;
+	padding: 0 12px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 650;
+}
+.path-secondary { color: #566274; background: #f2f6fb; }
+.path-primary { color: #fff; background: var(--accent); }
+.path-primary[disabled], .path-secondary[disabled] { opacity: .65; cursor: wait; }
+.project-action {
+	height: 24px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 8px;
+	border-radius: 5px;
+	background: #fff;
+	color: #174ea6;
+	font-size: 12px;
+	font-weight: 650;
+	flex: 0 0 auto;
+}
+.project-action:hover { background: #f7faff; }
+.project-action[disabled], .project-current[disabled] { opacity: .6; cursor: wait; }
 .searchbox {
 	position: relative;
 	min-width: 0;
@@ -175,7 +294,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	background: var(--panel);
 	min-width: 0;
 	display: grid;
-	grid-template-rows: 48px 1fr 44px;
+	grid-template-rows: var(--content-head-height) 1fr 44px;
 }
 .side-head, .side-foot {
 	display: flex;
@@ -225,7 +344,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	min-width: 0;
 	min-height: 0;
 	display: grid;
-	grid-template-rows: 46px minmax(0, 1fr);
+	grid-template-rows: var(--content-head-height) minmax(0, 1fr);
 	background: #fff;
 }
 .crumbs {
@@ -307,7 +426,18 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 .panel-title > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .panel-title-actions { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; overflow: visible; }
 .panel-title-actions .chip { margin-right: 0; }
-.refresh-btn { width: 28px; height: 28px; border-radius: 6px; }
+.refresh-btn {
+	width: 24px;
+	height: 24px;
+	display: inline-grid;
+	place-items: center;
+	border: 0;
+	border-radius: 5px;
+	background: transparent;
+	color: #566274;
+	padding: 0;
+}
+.refresh-btn:hover { background: #f2f6fb; color: #26374d; }
 .refresh-btn[disabled] { opacity: .55; cursor: wait; }
 .refresh-btn[aria-busy="true"] svg { animation: spin 900ms linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -392,6 +522,15 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	border-radius: 6px;
 	background: transparent;
 }
+.graph-tools .graph-toggle-btn {
+	width: auto;
+	min-width: 92px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 0 10px;
+}
 .graph-tools .icon-btn:hover { background: #f2f6fb; }
 .graph-tools .icon-btn[aria-pressed="false"] { color: #9aa6b5; background: #f6f8fb; }
 .graph-body { position: relative; min-height: 0; overflow: hidden; }
@@ -420,10 +559,10 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 .legend-row small { display: block; color: var(--muted); margin-top: 3px; line-height: 1.35; }
 .search-results {
 	position: fixed;
-	top: 52px;
-	right: clamp(12px, 11vw, 190px);
-	width: min(560px, calc(100vw - 40px));
-	max-height: 520px;
+	top: var(--search-results-top, 52px);
+	left: var(--search-results-left, 16px);
+	width: var(--search-results-width, min(560px, calc(100vw - 40px)));
+	max-height: min(520px, calc(100vh - var(--search-results-top, 52px) - 16px));
 	display: none;
 	overflow: auto;
 	border: 1px solid var(--border);
@@ -457,7 +596,15 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 			${icon("box", 28, "brand-icon")}
 			<div class="brand-title">Axiom Preview</div>
 		</div>
-		<div class="command" aria-label="启动命令">${icon("terminal", 16)}<span>python3 axm_preview.py --target .</span></div>
+		<div class="projectbar" aria-label="Project">
+			<button class="project-current" id="projectCurrent" type="button" aria-label="Switch project" aria-haspopup="listbox" aria-expanded="false">
+				${icon("folder", 16)}
+				<span class="project-name" id="projectName">Open a project</span>
+				${icon("chevron-down", 13, "project-chevron")}
+			</button>
+			<button class="project-action" id="openProject" type="button">Open</button>
+			<button class="project-action" id="manualProject" type="button">Path</button>
+		</div>
 		<label class="searchbox" aria-label="搜索文档">
 			${icon("search", 16)}
 			<input id="searchInput" placeholder="Search docs, meta, code refs">
@@ -472,7 +619,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	<div class="shell">
 		<aside class="sidebar">
 			<div class="side-head">
-				<strong>.axm</strong>
+				<strong id="sideRootLabel">.axm</strong>
 			</div>
 			<nav class="tree" id="fileTree" aria-label=".axm 文件树"></nav>
 			<div class="side-foot"><span id="sideDocCount">0 docs</span></div>
@@ -488,14 +635,14 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		</main>
 		<section class="graph-drawer" id="graphSection">
 			<div class="graph-head">
-				<button class="icon-btn" id="graphToggle" aria-label="展开图谱" aria-expanded="false">${icon("panel-bottom-open", 18)}</button>
 				<strong>Knowledge Graph</strong>
 				<span class="graph-meta" id="graphMeta">0 nodes · 0 edges</span>
 				<div class="graph-tools">
 					<button class="icon-btn" id="legendToggle" aria-label="隐藏图例" aria-pressed="true">${icon("list", 18)}</button>
-					<button class="icon-btn" id="zoomOut" aria-label="缩小">${icon("zoom-out", 18)}</button>
 					<button class="icon-btn" id="fitGraph" aria-label="适配视图">${icon("scan", 18)}</button>
+					<button class="icon-btn" id="zoomOut" aria-label="缩小">${icon("zoom-out", 18)}</button>
 					<button class="icon-btn" id="zoomIn" aria-label="放大">${icon("zoom-in", 18)}</button>
+					<button class="icon-btn graph-toggle-btn" id="graphToggle" aria-label="Expand graph" aria-expanded="false">Expand</button>
 				</div>
 			</div>
 			<div class="graph-body">
@@ -507,6 +654,23 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 				</div>
 			</div>
 		</section>
+	</div>
+</div>
+<div class="project-popover" id="projectDropdown" role="listbox" aria-label="Recent projects"></div>
+<div class="path-backdrop" id="pathDialog" aria-hidden="true">
+	<div class="path-dialog" role="dialog" aria-modal="true" aria-labelledby="pathDialogTitle">
+		<div class="path-dialog-head">
+			<div class="path-dialog-title" id="pathDialogTitle">Project path</div>
+			<button class="path-close" id="pathDialogClose" type="button" aria-label="Close">×</button>
+		</div>
+		<div class="path-dialog-body">
+			<input class="path-input" id="projectPathInput" placeholder="/path/to/project" spellcheck="false">
+			<div class="path-error" id="projectPathError"></div>
+		</div>
+		<div class="path-dialog-actions">
+			<button class="path-secondary" id="pathDialogCancel" type="button">Cancel</button>
+			<button class="path-primary" id="pathDialogSubmit" type="button">Open</button>
+		</div>
 	</div>
 </div>
 <div class="search-results" id="searchResults"></div>
@@ -521,6 +685,11 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	var graphDrawFrame = 0;
 	var treeCollapsed = new Set();
 	var refreshing = false;
+	var currentTarget = null;
+	var recentProjects = loadRecentProjects();
+	var projectMenuOpen = false;
+	var pathDialogOpen = false;
+	var projectError = "";
 	var iconPaths = ${JSON.stringify(ICON_PATHS)};
 	var colors = {
 		entries: "#1d6fe8",
@@ -547,6 +716,18 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		meta: document.getElementById("metaPanel"),
 		crumbs: document.getElementById("breadcrumbs"),
 		search: document.getElementById("searchInput"),
+		projectCurrent: document.getElementById("projectCurrent"),
+		projectName: document.getElementById("projectName"),
+		projectDropdown: document.getElementById("projectDropdown"),
+		openProject: document.getElementById("openProject"),
+		manualProject: document.getElementById("manualProject"),
+		pathDialog: document.getElementById("pathDialog"),
+		projectPathInput: document.getElementById("projectPathInput"),
+		projectPathError: document.getElementById("projectPathError"),
+		pathDialogClose: document.getElementById("pathDialogClose"),
+		pathDialogCancel: document.getElementById("pathDialogCancel"),
+		pathDialogSubmit: document.getElementById("pathDialogSubmit"),
+		sideRootLabel: document.getElementById("sideRootLabel"),
 		results: document.getElementById("searchResults"),
 		canvas: document.getElementById("graphCanvas"),
 		graphMeta: document.getElementById("graphMeta"),
@@ -556,35 +737,242 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		legendToggle: document.getElementById("legendToggle")
 	};
 
+	renderProjectPicker();
 	loadModel(true);
 
 	function loadModel(initial) {
 		if (refreshing) return Promise.resolve();
 		refreshing = !initial;
 		setRefreshBusy(true);
-		return fetch("/api/model", { cache: "no-store" })
-			.then(function (res) {
-				if (!res.ok) throw new Error("Preview model failed: " + res.status);
-				return res.json();
-			})
-			.then(function (data) {
-				model = data;
-				if (initial) {
-					var storedPath = localStorage.getItem("axmPreview:selectedPath");
-					selectedPath = findDoc(storedPath) ? storedPath : defaultDocPath();
-				} else if (!findDoc(selectedPath)) {
-					selectedPath = defaultDocPath();
-				}
-				if (selectedPath) localStorage.setItem("axmPreview:selectedPath", selectedPath);
-				renderAll();
-			})
+		return fetchJson("/api/model", { cache: "no-store" })
+			.then(function (data) { applyModel(data, initial); })
 			.catch(function (error) {
-				els.markdown.innerHTML = '<div class="empty">' + escapeHtml(error.message) + "</div>";
+				currentTarget = null;
+				renderProjectPicker();
+				renderNoTarget(error.message);
 			})
 			.finally(function () {
 				refreshing = false;
 				setRefreshBusy(false);
 			});
+	}
+
+	function applyModel(data, initial) {
+		model = data;
+		currentTarget = data.target || null;
+		rememberTarget(currentTarget);
+		renderProjectPicker();
+		if (initial) {
+			var storedPath = localStorage.getItem("axmPreview:selectedPath");
+			selectedPath = findDoc(storedPath) ? storedPath : defaultDocPath();
+		} else if (!findDoc(selectedPath)) {
+			selectedPath = defaultDocPath();
+		}
+		if (selectedPath) localStorage.setItem("axmPreview:selectedPath", selectedPath);
+		renderAll();
+	}
+
+	function fetchJson(url, options) {
+		return fetch(url, options).then(function (res) {
+			return res.json().catch(function () { return {}; }).then(function (body) {
+				if (res.ok) return body;
+				var error = new Error(body.message || "Preview request failed: " + res.status);
+				error.error = body.error;
+				error.candidates = body.candidates || [];
+				throw error;
+			});
+		});
+	}
+
+	function renderNoTarget(message) {
+		model = null;
+		selectedPath = null;
+		els.sideRootLabel.textContent = ".axm";
+		els.docCount.textContent = "0 docs";
+		els.errorCount.textContent = "0 errors";
+		els.warningCount.textContent = "0 warnings";
+		els.sideDocCount.textContent = "0 docs";
+		els.graphMeta.textContent = "0 nodes · 0 edges";
+		els.tree.innerHTML = "";
+		els.crumbs.innerHTML = "<strong>No project selected</strong>";
+		els.markdown.innerHTML = '<div class="empty">' + escapeHtml(message || "Open a project folder that contains .axm.") + "</div>";
+		els.meta.innerHTML = '<div class="panel"><div class="panel-title"><span>Project</span></div><div class="validate-card"><div class="validate-row"><span class="validate-icon warn">' + iconSvg("folder", 13) + '</span><div><div class="validate-title">Open an Axiom project</div><div class="validate-sub">Choose a project folder that contains .axm, or switch to a recent project.</div></div></div></div></div>';
+		graphHitBoxes = [];
+	}
+
+	function renderProjectPicker() {
+		var label = currentTarget ? currentTarget.name : "Open a project";
+		var title = currentTarget ? currentTarget.path : "";
+		els.projectName.textContent = label;
+		els.projectCurrent.title = title;
+		els.projectCurrent.setAttribute("aria-expanded", projectMenuOpen ? "true" : "false");
+		renderProjectDropdown();
+	}
+
+	function renderProjectDropdown() {
+		els.projectDropdown.innerHTML = "";
+		var activePath = currentTarget ? currentTarget.path : "";
+		var items = recentProjects.slice();
+		if (currentTarget && !items.some(function (item) { return item.path === currentTarget.path; })) {
+			items.unshift(currentTarget);
+		}
+		if (!items.length) {
+			els.projectDropdown.innerHTML = '<div class="project-popover-empty">No recent projects</div>';
+		}
+		items.forEach(function (project) {
+			var option = document.createElement("button");
+			option.type = "button";
+			option.className = "project-option" + (project.path === activePath ? " active" : "");
+			option.dataset.path = project.path;
+			option.title = project.path;
+			option.setAttribute("role", "option");
+			option.setAttribute("aria-selected", project.path === activePath ? "true" : "false");
+			option.innerHTML = '<span class="project-option-title">' + escapeHtml(project.name) + '</span><span class="project-option-path">' + escapeHtml(project.path) + '</span>';
+			els.projectDropdown.appendChild(option);
+		});
+		if (projectError) {
+			var error = document.createElement("div");
+			error.className = "project-popover-error";
+			error.textContent = projectError;
+			els.projectDropdown.appendChild(error);
+		}
+		if (projectMenuOpen) positionProjectDropdown();
+	}
+
+	function loadRecentProjects() {
+		try {
+			var parsed = JSON.parse(localStorage.getItem("axmPreview:recentProjects") || "[]");
+			if (!Array.isArray(parsed)) return [];
+			return parsed.filter(function (item) {
+				return item && typeof item.path === "string" && typeof item.name === "string";
+			}).slice(0, 8);
+		} catch {
+			return [];
+		}
+	}
+
+	function rememberTarget(target) {
+		if (!target || !target.path) return;
+		recentProjects = [target].concat(recentProjects.filter(function (item) {
+			return item.path !== target.path;
+		})).slice(0, 8);
+		try {
+			localStorage.setItem("axmPreview:recentProjects", JSON.stringify(recentProjects));
+		} catch {}
+	}
+
+	function setProjectBusy(busy) {
+		els.openProject.disabled = busy;
+		els.manualProject.disabled = busy;
+		els.projectCurrent.disabled = busy;
+		els.pathDialogSubmit.disabled = busy;
+		els.pathDialogCancel.disabled = busy;
+	}
+
+	function switchTarget(path) {
+		if (!path) return Promise.resolve();
+		setProjectBusy(true);
+		projectError = "";
+		setPathError("");
+		return fetchJson("/api/target", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ path: path })
+		})
+			.then(function (data) {
+				closeProjectDropdown();
+				closePathDialog();
+				applyModel(data, false);
+			})
+			.catch(function (error) {
+				handleTargetError(error);
+				throw error;
+			})
+			.finally(function () { setProjectBusy(false); });
+	}
+
+	function openProject() {
+		toggleProjectDropdown();
+	}
+
+	function toggleProjectDropdown() {
+		if (projectMenuOpen) closeProjectDropdown();
+		else openProjectDropdown();
+	}
+
+	function openProjectDropdown() {
+		projectMenuOpen = true;
+		projectError = "";
+		closePathDialog();
+		renderProjectPicker();
+		els.projectDropdown.classList.add("open");
+		els.projectCurrent.setAttribute("aria-expanded", "true");
+		positionProjectDropdown();
+	}
+
+	function closeProjectDropdown() {
+		projectMenuOpen = false;
+		els.projectDropdown.classList.remove("open");
+		els.projectCurrent.setAttribute("aria-expanded", "false");
+	}
+
+	function positionProjectDropdown() {
+		var anchor = document.querySelector(".projectbar");
+		if (!anchor) return;
+		var rect = anchor.getBoundingClientRect();
+		var viewportPadding = 12;
+		var maxWidth = Math.max(260, window.innerWidth - viewportPadding * 2);
+		var width = Math.min(430, Math.max(280, rect.width), maxWidth);
+		var left = Math.min(Math.max(viewportPadding, rect.left), window.innerWidth - viewportPadding - width);
+		var top = rect.bottom + 8;
+		els.projectDropdown.style.setProperty("--project-menu-top", Math.round(top) + "px");
+		els.projectDropdown.style.setProperty("--project-menu-left", Math.round(left) + "px");
+		els.projectDropdown.style.setProperty("--project-menu-width", Math.round(width) + "px");
+	}
+
+	function openPathDialog(message) {
+		projectError = "";
+		closeProjectDropdown();
+		pathDialogOpen = true;
+		els.pathDialog.classList.add("open");
+		els.pathDialog.setAttribute("aria-hidden", "false");
+		els.projectPathInput.value = currentTarget ? currentTarget.path : "";
+		setPathError(message || "");
+		els.projectPathInput.focus();
+		els.projectPathInput.select();
+	}
+
+	function closePathDialog() {
+		pathDialogOpen = false;
+		els.pathDialog.classList.remove("open");
+		els.pathDialog.setAttribute("aria-hidden", "true");
+		setPathError("");
+	}
+
+	function submitPathDialog() {
+		var value = els.projectPathInput.value.trim();
+		if (!value) {
+			setPathError("Project path is required.");
+			return;
+		}
+		switchTarget(value).catch(function () {});
+	}
+
+	function setPathError(message) {
+		els.projectPathError.textContent = message || "";
+	}
+
+	function handleTargetError(error) {
+		if (pathDialogOpen) {
+			setPathError(error.message);
+			return;
+		}
+		projectError = error.message;
+		renderProjectDropdown();
+		if (projectMenuOpen) els.projectDropdown.classList.add("open");
+		if (!model) {
+			renderNoTarget(error.message);
+		}
 	}
 
 	function setRefreshBusy(busy) {
@@ -596,6 +984,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	}
 
 	function renderAll() {
+		els.sideRootLabel.textContent = (model.target && model.target.name ? model.target.name : "project") + "/.axm";
 		els.docCount.textContent = model.summary.docs + " docs";
 		els.errorCount.textContent = model.summary.errors + " errors";
 		els.warningCount.textContent = model.summary.warnings + " warnings";
@@ -639,7 +1028,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 			dirRow.style.setProperty("--tree-indent", indent);
 			dirRow.dataset.path = node.path;
 			dirRow.setAttribute("aria-expanded", collapsed ? "false" : "true");
-			dirRow.innerHTML = '<span class="tree-disclosure">' + iconSvg(collapsed ? "chevron-right" : "chevron-down", 13) + '</span><span class="tree-icon">' + iconSvg("folder", 16) + '</span><span class="tree-name">' + escapeHtml(node.name) + '</span>';
+			dirRow.innerHTML = '<span class="tree-disclosure">' + iconSvg(collapsed ? "chevron-right" : "chevron-down", 13) + '</span><span class="tree-icon">' + iconSvg("folder", 16) + '</span><span class="tree-name">' + escapeHtml(treeDisplayName(node)) + '</span>';
 			dirRow.addEventListener("click", function () { toggleTreeNode(node.path); });
 			parent.appendChild(dirRow);
 			if (!collapsed) renderTreeChildren(node.children || [], depth + 1, parent);
@@ -651,14 +1040,20 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		row.className = "tree-row" + (node.path === selectedPath ? " active" : "");
 		row.style.setProperty("--tree-indent", indent);
 		row.dataset.path = node.path;
-		row.title = node.title ? node.name + " — " + node.title : node.name;
-		row.innerHTML = '<span class="tree-disclosure placeholder">' + iconSvg("chevron-right", 13) + '</span><span class="tree-icon">' + docIcon(node) + '</span><span class="tree-name">' + escapeHtml(node.name) + '</span>';
+		var displayName = treeDisplayName(node);
+		row.title = node.title ? displayName + " — " + node.title : displayName;
+		row.innerHTML = '<span class="tree-disclosure placeholder">' + iconSvg("chevron-right", 13) + '</span><span class="tree-icon">' + docIcon(node) + '</span><span class="tree-name">' + escapeHtml(displayName) + '</span>';
 		row.addEventListener("click", function () { selectDoc(node.path); });
 		parent.appendChild(row);
 	}
 
 	function docIcon(doc) {
 		return iconSvg("file-text", 15);
+	}
+
+	function treeDisplayName(node) {
+		if (node.path === "AGENTS.md") return "../AGENTS.md";
+		return node.name;
 	}
 
 	function toggleTreeNode(path) {
@@ -724,7 +1119,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		var allIssueRows = renderIssueRows(allIssues, "No project issues", "当前项目未发现契约问题");
 		var statusIcon = model.validation.errors ? "circle-alert" : model.validation.warnings ? "triangle-alert" : "check";
 		var statusClassName = model.validation.status === "pass" ? "active" : model.validation.status === "warn" ? "draft" : "deprecated";
-		els.meta.innerHTML = '<div class="panel"><div class="panel-title"><span>axm-meta</span><span class="chip">' + escapeHtml(doc.name) + '</span></div><table class="meta-table"><tbody>' + rows.join("") + '</tbody></table></div><div class="panel"><div class="panel-title"><span>Contract check</span><span class="panel-title-actions"><button class="icon-btn refresh-btn" id="validationRefresh" type="button" title="重新检查" aria-label="重新检查" aria-busy="false">' + iconSvg("refresh-cw", 14) + '</button><span class="chip ' + statusClassName + '">' + escapeHtml(model.validation.status.toUpperCase()) + '</span></span></div><div class="validate-card"><div class="validate-row"><span class="validate-icon ' + (model.validation.errors ? "err" : model.validation.warnings ? "warn" : "") + '">' + iconSvg(statusIcon, 13) + '</span><div><div class="validate-title">' + escapeHtml(checkedLabel()) + '</div><div class="validate-sub">' + model.summary.errors + ' error(s), ' + model.summary.warnings + ' warning(s)</div></div></div><div class="validate-section-title">Current document</div>' + currentIssueRows + '<div class="validate-section-title">All issues</div>' + allIssueRows + '</div></div>';
+		els.meta.innerHTML = '<div class="panel"><div class="panel-title"><span>axm-meta</span><span class="chip">' + escapeHtml(doc.name) + '</span></div><table class="meta-table"><tbody>' + rows.join("") + '</tbody></table></div><div class="panel"><div class="panel-title"><span>Contract check</span><span class="panel-title-actions"><span class="chip ' + statusClassName + '">' + escapeHtml(model.validation.status.toUpperCase()) + '</span><button class="refresh-btn" id="validationRefresh" type="button" title="重新检查" aria-label="重新检查" aria-busy="false">' + iconSvg("refresh-cw", 14) + '</button></span></div><div class="validate-card"><div class="validate-row"><span class="validate-icon ' + (model.validation.errors ? "err" : model.validation.warnings ? "warn" : "") + '">' + iconSvg(statusIcon, 13) + '</span><div><div class="validate-title">' + escapeHtml(checkedLabel()) + '</div><div class="validate-sub">' + model.summary.errors + ' error(s), ' + model.summary.warnings + ' warning(s)</div></div></div><div class="validate-section-title">Current document</div>' + currentIssueRows + '<div class="validate-section-title">All issues</div>' + allIssueRows + '</div></div>';
 	}
 
 	function checkedLabel() {
@@ -889,6 +1284,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 			return;
 		}
 		var matches = model.documents.filter(function (doc) { return doc.searchText.indexOf(q) !== -1; }).slice(0, 24);
+		positionSearchResults();
 		els.results.classList.add("open");
 		if (!matches.length) {
 			els.results.innerHTML = '<div class="empty">No matches</div>';
@@ -905,9 +1301,49 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		});
 	}
 
+	function positionSearchResults() {
+		var anchor = els.search.closest ? els.search.closest(".searchbox") : els.search.parentElement;
+		if (!anchor) return;
+		var rect = anchor.getBoundingClientRect();
+		var viewportPadding = 12;
+		var maxWidth = Math.max(240, window.innerWidth - viewportPadding * 2);
+		var width = Math.min(560, Math.max(320, rect.width), maxWidth);
+		var left = Math.min(Math.max(viewportPadding, rect.left), window.innerWidth - viewportPadding - width);
+		var top = Math.min(rect.bottom + 8, window.innerHeight - 24);
+		els.results.style.setProperty("--search-results-top", Math.round(top) + "px");
+		els.results.style.setProperty("--search-results-left", Math.round(left) + "px");
+		els.results.style.setProperty("--search-results-width", Math.round(width) + "px");
+	}
+
 	els.search.addEventListener("input", function () {
 		clearTimeout(searchTimer);
 		searchTimer = setTimeout(function () { runSearch(els.search.value); }, 120);
+	});
+	els.search.addEventListener("focus", function () {
+		if (els.results.classList.contains("open")) positionSearchResults();
+	});
+	els.projectCurrent.addEventListener("click", toggleProjectDropdown);
+	els.openProject.addEventListener("click", openProject);
+	els.manualProject.addEventListener("click", function () { openPathDialog(""); });
+	els.projectDropdown.addEventListener("click", function (event) {
+		var option = event.target.closest ? event.target.closest(".project-option") : null;
+		if (!option || !option.dataset.path) return;
+		switchTarget(option.dataset.path).catch(function () {});
+	});
+	els.pathDialogClose.addEventListener("click", closePathDialog);
+	els.pathDialogCancel.addEventListener("click", closePathDialog);
+	els.pathDialog.addEventListener("click", function (event) {
+		if (event.target === els.pathDialog) closePathDialog();
+	});
+	els.pathDialogSubmit.addEventListener("click", submitPathDialog);
+	els.projectPathInput.addEventListener("keydown", function (event) {
+		if (event.key === "Enter") submitPathDialog();
+	});
+	document.addEventListener("click", function (event) {
+		if (!projectMenuOpen) return;
+		var inProjectBar = event.target.closest ? event.target.closest(".projectbar") : null;
+		var inProjectDropdown = event.target.closest ? event.target.closest("#projectDropdown") : null;
+		if (!inProjectBar && !inProjectDropdown) closeProjectDropdown();
 	});
 	document.addEventListener("keydown", function (event) {
 		if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
@@ -915,7 +1351,9 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 			els.search.focus();
 		}
 		if (event.key === "Escape") {
-			if (els.graphSection.classList.contains("fullscreen")) collapseGraph();
+			if (pathDialogOpen) closePathDialog();
+			else if (projectMenuOpen) closeProjectDropdown();
+			else if (els.graphSection.classList.contains("fullscreen")) collapseGraph();
 			else els.results.classList.remove("open");
 		}
 		if (event.key === "Enter" && document.activeElement === els.search) {
@@ -995,7 +1433,11 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 			}
 		}
 	});
-	window.addEventListener("resize", function () { if (model) scheduleGraphDraw(); });
+	window.addEventListener("resize", function () {
+		if (model) scheduleGraphDraw();
+		if (els.results.classList.contains("open")) positionSearchResults();
+		if (projectMenuOpen) positionProjectDropdown();
+	});
 
 	function endGraphDrag(event) {
 		if (!graphDrag.active) return;
@@ -1054,16 +1496,16 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		els.results.classList.remove("open");
 		els.graphSection.classList.toggle("fullscreen", true);
 		els.graphToggle.setAttribute("aria-expanded", "true");
-		els.graphToggle.setAttribute("aria-label", "收起图谱");
-		els.graphToggle.innerHTML = iconSvg("panel-bottom-close", 18);
+		els.graphToggle.setAttribute("aria-label", "Collapse graph");
+		els.graphToggle.textContent = "Collapse";
 		scheduleGraphDraw();
 	}
 
 	function collapseGraph() {
 		els.graphSection.classList.toggle("fullscreen", false);
 		els.graphToggle.setAttribute("aria-expanded", "false");
-		els.graphToggle.setAttribute("aria-label", "展开图谱");
-		els.graphToggle.innerHTML = iconSvg("panel-bottom-open", 18);
+		els.graphToggle.setAttribute("aria-label", "Expand graph");
+		els.graphToggle.textContent = "Expand";
 		graphHitBoxes = [];
 		scheduleGraphDraw();
 	}

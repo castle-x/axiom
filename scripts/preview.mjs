@@ -3,15 +3,16 @@
  * axm preview — 只读 localhost 预览器
  *
  * 用法：
- *   node scripts/preview.mjs --target=. [--port=8765]
+ *   node scripts/preview.mjs [--target=.] [--port=8765]
  *
  * 约束：
  *   - 只绑定 127.0.0.1
- *   - 只提供 GET/HEAD/OPTIONS 查看接口
+ *   - 查看接口只读；target 切换只更新本 preview 进程状态
  *   - 不执行 scaffold / validate / reindex
  *   - 不写入目标仓库
  */
 
+import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -20,19 +21,12 @@ import { buildPreviewHtml } from "./_lib/preview-page.mjs";
 
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 8765;
-const ALLOW = "GET, HEAD, OPTIONS";
+const ALLOW = "GET, HEAD, OPTIONS, POST";
 
 export function createPreviewServer({ target = "." } = {}) {
-	const resolvedTarget = path.resolve(target);
-	buildPreviewModel(resolvedTarget);
+	let activeTarget = resolveInitialTarget(target);
 
-	return http.createServer((req, res) => {
-		if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
-			send(res, 405, { error: "method_not_allowed", allow: ALLOW }, req.method, {
-				Allow: ALLOW,
-			});
-			return;
-		}
+	return http.createServer(async (req, res) => {
 		if (req.method === "OPTIONS") {
 			res.writeHead(204, {
 				Allow: ALLOW,
@@ -43,24 +37,155 @@ export function createPreviewServer({ target = "." } = {}) {
 		}
 
 		const url = new URL(req.url || "/", "http://127.0.0.1");
+		if (req.method === "POST") {
+			if (!isSameOriginPost(req)) {
+				send(res, 403, { error: "forbidden", message: "POST requests must be same-origin." }, req.method);
+				return;
+			}
+			if (url.pathname === "/api/target") {
+				try {
+					const body = await readJsonBody(req);
+					const nextTarget = resolveAxmTarget(body.path);
+					activeTarget = nextTarget;
+					send(res, 200, buildPreviewModel(activeTarget.path), req.method);
+				} catch (error) {
+					sendError(res, error, req.method);
+				}
+				return;
+			}
+			send(res, 405, { error: "method_not_allowed", allow: ALLOW }, req.method, {
+				Allow: ALLOW,
+			});
+			return;
+		}
+		if (!["GET", "HEAD"].includes(req.method)) {
+			send(res, 405, { error: "method_not_allowed", allow: ALLOW }, req.method, {
+				Allow: ALLOW,
+			});
+			return;
+		}
 		if (url.pathname === "/") {
 			sendHtml(res, buildPreviewHtml(), req.method);
 			return;
 		}
 		if (url.pathname === "/api/model") {
 			try {
-				send(res, 200, buildPreviewModel(resolvedTarget), req.method);
+				if (!activeTarget) throw previewError("target_not_selected", "Open a project folder that contains .axm.", 409);
+				send(res, 200, buildPreviewModel(activeTarget.path), req.method);
 			} catch (error) {
-				send(res, 500, { error: "preview_model_failed", message: error.message }, req.method);
+				sendError(res, error, req.method);
 			}
 			return;
 		}
+		if (url.pathname === "/api/target") {
+			send(res, 200, { target: activeTarget }, req.method);
+			return;
+		}
 		if (url.pathname === "/api/health") {
-			send(res, 200, { ok: true, readonly: true }, req.method);
+			send(res, 200, { ok: true, readonly: true, target: activeTarget }, req.method);
 			return;
 		}
 		send(res, 404, { error: "not_found" }, req.method);
 	});
+}
+
+function resolveInitialTarget(target) {
+	try {
+		return resolveAxmTarget(target);
+	} catch {
+		return null;
+	}
+}
+
+function resolveAxmTarget(inputPath) {
+	if (!inputPath || typeof inputPath !== "string") {
+		throw previewError("target_path_required", "Project path is required.", 400);
+	}
+	const resolved = path.resolve(inputPath);
+	if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) {
+		throw previewError("target_not_directory", `Project path is not a directory: ${resolved}`, 400);
+	}
+	const directRoot = path.basename(resolved) === ".axm" ? path.dirname(resolved) : resolved;
+	if (hasAxm(directRoot)) return targetInfo(directRoot);
+
+	const candidates = findImmediateAxmProjects(resolved);
+	if (candidates.length === 1) return targetInfo(candidates[0]);
+	if (candidates.length > 1) {
+		const error = previewError("target_multiple_projects", "Multiple child projects contain .axm. Choose a more specific project path.", 400);
+		error.candidates = candidates.map((candidate) => targetInfo(candidate));
+		throw error;
+	}
+	throw previewError("target_missing_axm", `.axm directory not found under ${resolved}`, 400);
+}
+
+function hasAxm(projectPath) {
+	const axmPath = path.join(projectPath, ".axm");
+	return fs.existsSync(axmPath) && fs.statSync(axmPath).isDirectory();
+}
+
+function findImmediateAxmProjects(root) {
+	return fs.readdirSync(root, { withFileTypes: true })
+		.filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
+		.map((entry) => path.join(root, entry.name))
+		.filter((candidate) => {
+			try {
+				return hasAxm(candidate);
+			} catch {
+				return false;
+			}
+		});
+}
+
+function targetInfo(projectPath) {
+	const resolved = path.resolve(projectPath);
+	return {
+		path: resolved,
+		name: path.basename(resolved),
+	};
+}
+
+function isSameOriginPost(req) {
+	const origin = req.headers.origin;
+	if (!origin) return true;
+	try {
+		const parsed = new URL(origin);
+		return parsed.protocol === "http:" && parsed.host === req.headers.host;
+	} catch {
+		return false;
+	}
+}
+
+function readJsonBody(req) {
+	return new Promise((resolve, reject) => {
+		let raw = "";
+		req.setEncoding("utf8");
+		req.on("data", (chunk) => {
+			raw += chunk;
+			if (raw.length > 32768) {
+				reject(previewError("request_too_large", "Request body is too large.", 413));
+				req.destroy();
+			}
+		});
+		req.on("end", () => {
+			if (!raw.trim()) {
+				resolve({});
+				return;
+			}
+			try {
+				resolve(JSON.parse(raw));
+			} catch {
+				reject(previewError("invalid_json", "Request body must be JSON.", 400));
+			}
+		});
+		req.on("error", reject);
+	});
+}
+
+function previewError(code, message, status = 500) {
+	const error = new Error(message);
+	error.code = code;
+	error.status = status;
+	return error;
 }
 
 function sendHtml(res, html, method) {
@@ -83,6 +208,15 @@ function send(res, status, body, method, extraHeaders = {}) {
 	});
 	if (method !== "HEAD") res.end(payload);
 	else res.end();
+}
+
+function sendError(res, error, method) {
+	const status = Number.isInteger(error.status) ? error.status : error.code === "target_not_selected" ? 409 : 500;
+	send(res, status, {
+		error: error.code || "preview_model_failed",
+		message: error.message,
+		candidates: error.candidates,
+	}, method);
 }
 
 function parseArgs(argv) {
@@ -148,12 +282,14 @@ function listenOnce(server, host, port) {
 async function main() {
 	try {
 		const args = parseArgs(process.argv);
+		const initialTarget = resolveInitialTarget(args.target);
 		const server = createPreviewServer(args);
 		const address = await listenWithFallback(server, args);
 		const url = `http://${address.address}:${address.port}/`;
 		console.log(`Axiom Preview: ${url}`);
-		console.log(`target: ${path.resolve(args.target)}`);
-		console.log("readonly: GET /, GET /api/model, GET /api/health");
+		console.log(`target: ${initialTarget ? initialTarget.path : "not selected; use Open Project or Path in the UI"}`);
+		console.log("view: GET /, GET /api/model, GET /api/target, GET /api/health");
+		console.log("target switch: POST /api/target");
 	} catch (error) {
 		console.error(error.message);
 		process.exit(1);
