@@ -83,6 +83,25 @@ AI 会按 5 阶段 SOP 执行（详见 `SKILL.md`）：
             └── bugs/bug-YYYY-MM-DD-<slug>.md
 ```
 
+## axiom_preview 只读预览器
+
+`axiom_preview` 是 `.axm/` 的本地只读浏览器：启动一个 `127.0.0.1` 服务后，可以在顶部切换最近打开的项目或输入项目路径，自动识别项目下的 `.axm/`，不用为每个项目单独开一个服务。
+
+它适合快速查看：
+
+- `AGENTS.md` 与 `.axm/` 文件树
+- Markdown 正文、axm-meta 与契约校验结果
+- 搜索结果、索引关系与 Knowledge Graph
+- 最近打开项目的一键切换
+
+文档视图：
+
+![axiom_preview 只读预览器界面](docs/assets/axiom-preview.png)
+
+Knowledge Graph 视图：
+
+![axiom_preview Knowledge Graph 视图](docs/assets/axiom-preview-graph.png)
+
 ## 直接调用脚本
 
 跳过 AI、放进 CI 或自动化时可独立使用：
@@ -107,7 +126,7 @@ python3 /path/to/axm/axm_preview.py [--target=<repo-root>] [--port=8765]
 
 校验四件事：axm-meta 字段完整性 + 日期格式、`index.md` 与同目录实际文件双向一致、`knowledge/**` 的 `code-refs` 指向的源码真实存在、`AGENTS.md` Knowledge Index 引用的 `.axm` 路径可达。
 
-预览器仅展示 `AGENTS.md` 与 `.axm/` 文档、索引关系、axm-meta、校验摘要和 code-refs 路径；Web UI 可通过自带的最近项目下拉与 `Path` 输入框切换当前预览项目，并在浏览器本地保留最近打开路径，但不调用系统文件选择器，不提供 scaffold / validate / reindex 执行入口，也不会写入目标仓库。
+预览器仅展示 `AGENTS.md` 与 `.axm/` 文档、索引关系、axm-meta、校验摘要和 code-refs 路径；Web UI 不提供 scaffold / validate / reindex 执行入口，也不会写入目标仓库。
 
 ## 设计取舍
 
