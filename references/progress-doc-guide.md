@@ -16,19 +16,21 @@
 
 ```
 progress/<initiative>/
-├── index.md
+├── index.md             # 骨架 C，不写 progress-type / initiative
 ├── roadmap.md
 ├── decisions.md
 ├── specs/
-│   ├── index.md
+│   ├── index.md         # 骨架 C，不写 progress-type / initiative
 │   └── <spec>.md
 └── bugs/                # 该主题的 BUG（可选）
-    ├── index.md
+    ├── index.md         # 骨架 C，不写 progress-type / initiative
     ├── log.md           # BUG 看板汇总（骨架 D, progress-type=roadmap）
-    └── <bug-id>.md      # 单条 BUG（骨架 D, progress-type=bug）
+    └── bug-YYYY-MM-DD-<slug>.md  # 单条 BUG（骨架 D, progress-type=bug）
 ```
 
 BUG 管理是面向 AI 的通用规范，不限测试类型（API/UI/单测/人工皆适用）。**BUG 必须挂在某个 initiative 下**，不可在 `progress/` 顶层另建 `bugs/`；若 BUG 没有现成的归属主题，应先新建一个 initiative（如 `progress/quality/`、`progress/<module>/`）。详细写作规则见 `bug-doc-guide.md`。
+
+只要文件名是 `index.md`，就按骨架 C 写索引；即使它位于 `progress/<initiative>/`、`specs/` 或 `bugs/` 下，也不需要 `progress-type` 或 `initiative`。只有非 index 的 progress 文档才使用骨架 D。
 
 ## roadmap.md
 
@@ -87,21 +89,22 @@ Spec 可由 Superpowers、OpenSpec、人工讨论或其他外部方法生成；a
 
 1. **确认事实来源**：读取对应 roadmap/spec，以及必要的 `knowledge/`、`project/`、源码或测试输出；不要只凭聊天记忆更新。
 2. **同步长期事实**：把已经落地且未来仍应被召回的系统事实写入 `knowledge/`；把长期工程规范写入 `project/`。progress 只保留阶段历史、验收与决策轨迹。
-3. **更新 roadmap**：
+3. **检查未关闭 BUG**：读取该 initiative 的 `bugs/` 目录（如果存在）里的单条 BUG 文档，确认没有 `open`、`in-progress`、`fixed`、`verified` 或 `reopened` 状态的未关闭 BUG；不要只依赖 `bugs/log.md`，看板可能滞后于单条文档。
+4. **更新 roadmap**：
    - 阶段表状态改为 `已完成`，或写清 `核心完成 / deferred` 的边界
    - "当前事实进度"记录完成内容、关键 commit/PR、验收结论
    - "验证状态"记录最终命令、结果与已知既有阻塞
    - "尚未确认的问题"移除已解决项；遗留项必须指向下一阶段/spec 或标为 deferred
-4. **更新 spec**：
+5. **更新 spec**：
    - 任务清单、AI 自动验收、人类验收逐项打勾或说明 deferred
    - 记录最终验证命令、输出摘要、commit/PR 或截图/人工确认点
    - 明确非目标仍为非目标，避免后续 AI 误补
-5. **更新索引**：如果新增、删除、重命名了 progress 文档，运行 `reindex.mjs --dry-run`，确认 entries 一致；需要落盘时再运行不带 `--dry-run`。
-6. **校验契约**：运行 `validate.mjs --target=<项目根>`；ERROR 必须修，WARN 可说明后交付。
+6. **更新索引**：如果新增、删除、重命名了 progress 文档，运行 `reindex.mjs --dry-run`，确认 entries 一致；需要落盘时再运行不带 `--dry-run`。
+7. **校验契约**：运行 `validate.mjs --target=<项目根>`；ERROR 必须修，WARN 可说明后交付。
 
 ### status 字段怎么用
 
-axm-meta 的 `status` 表示这份文档是否仍可作为上下文参考，不等于阶段状态。
+axm-meta 的 `status` 表示这份文档的生命周期，说明它是否仍可作为上下文参考，不等于阶段状态、任务进度或 BUG 生命周期。
 
 | 情况 | axm-meta `status` | 正文阶段状态 |
 |---|---|---|
@@ -109,7 +112,7 @@ axm-meta 的 `status` 表示这份文档是否仍可作为上下文参考，不�
 | 计划被新方案替代，不应继续参考 | `deprecated` | 写明替代文档 |
 | 草稿 spec 尚未确认 | `draft` | `待确认` |
 
-不要为了表示阶段完成就把 progress 文档改成 `deprecated`。大多数已完成 roadmap/spec 仍应保持 `active`，因为它们记录了验收证据和历史决策。
+不要为了表示阶段完成就把 progress 文档改成 `deprecated`。大多数已完成 roadmap/spec 仍应保持 `active`，因为它们记录了验收证据和历史决策。业务状态写在正文里；spec 推荐设置 `## 实施进度` 小节记录 `未开始 / 进行中 / 已完成 / deferred` 等业务状态。
 
 ## decisions.md
 
@@ -136,7 +139,7 @@ related:
 - `roadmap`
 - `spec`
 - `decision`
-- `bug`（仅用于 `progress/<initiative>/bugs/<bug-id>.md`，`initiative` 字段填实际主题名而非 `bugs`；详见 `bug-doc-guide.md`）
+- `bug`（仅用于 `progress/<initiative>/bugs/bug-YYYY-MM-DD-<slug>.md` 直接子文件，`initiative` 字段填实际主题名而非 `bugs`；详见 `bug-doc-guide.md`）
 
 ## 自查清单
 

@@ -1,12 +1,12 @@
 # bug-doc-guide.md — BUG 写作指南
 
-> 适用范围：`.axm/progress/<initiative>/bugs/**/*.md`。这是面向 AI 的通用 BUG 管理规范，不限技术栈与测试类型（API / UI / 单测 / 人工 / 生产事故复盘）。让任何 AI 接手"测出 / 修 / 验收 / 关闭 / 重开"都能从同一处文档拿到上下文。
+> 适用范围：`.axm/progress/<initiative>/bugs/` 下的直接子文件。这里不允许再建嵌套子目录；这是面向 AI 的通用 BUG 管理规范，不限技术栈与测试类型（API / UI / 单测 / 人工 / 生产事故复盘）。让任何 AI 接手"测出 / 修 / 验收 / 关闭 / 重开"都能从同一处文档拿到上下文。
 
 ## 0. 硬规则速查（违反任一条 = 错）
 
-1. BUG 文档**必须**位于 `progress/<initiative>/bugs/`；禁止在 `progress/` 顶层另建 `bugs/`，禁止把 BUG 散在不带 initiative 的位置
+1. BUG 文档**必须**是 `progress/<initiative>/bugs/` 下的直接子文件；禁止在 `progress/` 顶层另建 `bugs/`，禁止在 `bugs/` 下再建嵌套目录，禁止把 BUG 散在不带 initiative 的位置
 2. axm-meta `initiative` 字段填**实际主题名**（如 `auth-redesign`、`quality`），**禁止填 `bugs`**
-3. 文件名 `bug-<YYYY-MM-DD>-<short-slug>.md`，kebab-case，是 axm 日期前缀禁令的唯一豁免
+3. 文件名 `progress/<initiative>/bugs/bug-YYYY-MM-DD-<slug>.md`，kebab-case，是 axm 日期前缀禁令的唯一豁免
 4. 状态值必须在固定 8 个内（见 §3）；任何状态变更**只追加时间线**，禁止改写历史
 5. BUG 关闭后**保留**文件，不删除
 6. 没有归属主题时，**先新建 initiative** 再放 BUG（见 §1）
@@ -15,15 +15,17 @@
 
 ```
 progress/<initiative>/
-├── index.md                 # 骨架 C（必须）
+├── index.md                 # 骨架 C（必须，不写 progress-type / initiative）
 ├── roadmap.md / specs/      # 该主题的开发计划（可选）
 └── bugs/                    # 该主题 BUG（可选）
-    ├── index.md             # 骨架 C
+    ├── index.md             # 骨架 C（不写 progress-type / initiative）
     ├── log.md               # 骨架 D, progress-type=roadmap，看板
-    └── <bug-id>.md          # 骨架 D, progress-type=bug，单条 BUG
+    └── bug-YYYY-MM-DD-<slug>.md  # 骨架 D, progress-type=bug，单条 BUG
 ```
 
 `bugs/` 只能与 `roadmap.md` / `specs/` 同级——这样闭合 initiative 时能连带审视未关闭 BUG，且 BUG 与所属业务天然强关联。
+
+`bugs/index.md` 仍然是索引文档，必须使用骨架 C；不要因为它位于 `progress/` 下就添加 `progress-type` 或 `initiative`。
 
 **找不到归属时**按以下顺序处理：
 
@@ -137,7 +139,7 @@ related:
 
 | 角色 | 关键动作（按顺序） |
 |---|---|
-| **测试 agent**（提交） | ① 复现 ≥2 次（间歇复现写"N/M"）→ ② 选/建归属 initiative → ③ 确保 `bugs/{index,log}.md` 存在 → ④ 跨 initiative 查重 → ⑤ 创建 `<bug-id>.md`（骨架填齐）→ ⑥ 看板登记 → ⑦ `reindex.mjs --dry-run` 后落盘 → ⑧ `validate.mjs` 零 ERROR → ⑨ 状态停留 `open`，不自动接单 |
+| **测试 agent**（提交） | ① 复现 ≥2 次（间歇复现写"N/M"）→ ② 选/建归属 initiative → ③ 确保 `bugs/{index,log}.md` 存在 → ④ 跨 initiative 查重 → ⑤ 创建 `bug-YYYY-MM-DD-<slug>.md`（骨架填齐）→ ⑥ 看板登记 → ⑦ `reindex.mjs --dry-run` 后落盘 → ⑧ `validate.mjs` 零 ERROR → ⑨ 状态停留 `open`，不自动接单 |
 | **开发 agent**（修复） | ① 改状态 `in-progress` 并记时间线 → ② 在"根因分析"补全（更大设计开 spec）→ ③ 按"AI 自动验收"区块先写失败测试 → ④ 修复使其通过 → ⑤ 跑全套验收，状态 `fixed` 并记 commit/PR → ⑥ 不自动 `verified` |
 | **验收 agent / 人类** | ① 拉修复后代码 → ② 跑 AI 自动验收并存输出 → ③ 跑人类验收并存截图 / 路径 → ④ 通过 → `verified`；不通过 → `reopened` 并写回归证据 |
 | **维护方**（闭合） | ① 跟踪期 ≥1 发布周期无回归 → 状态 `closed` → ② 长期事实同步到 `knowledge/` → ③ 看板从"未关闭"移到"最近关闭"→ ④ 文件保留 → ⑤ `reindex.mjs` + `validate.mjs` |
@@ -153,7 +155,7 @@ related:
 
 ## 7. 自查清单（提交 / 关闭前过一遍）
 
-- [ ] 路径在 `progress/<initiative>/bugs/`，文件名 `bug-YYYY-MM-DD-<slug>.md`
+- [ ] 路径在 `progress/<initiative>/bugs/`，完整文件名形如 `progress/<initiative>/bugs/bug-YYYY-MM-DD-<slug>.md`
 - [ ] axm-meta `progress-type: bug`，`initiative` 是真实主题名
 - [ ] 元信息表 7 项齐全（ID / 所属 initiative / 提交人 / 优先级 / 严重度 / 当前状态 / 影响模块）
 - [ ] 复现步骤、期望 / 实际表现、修复验收标准（AI + 人类）三段不为空

@@ -3,7 +3,7 @@ name: axm
 description: |
   为项目建立 AI 可读的上下文知识库——`.axm/` 目录（规范 / 知识 / 索引 / 进度四类文档）加根目录 `AGENTS.md` 路由表，让 AI 接手任务时不必每次重新解释技术栈与架构。
 
-  在以下场景必须立即调用：初始化或补全 axm / `AGENTS.md`；校验 axm-meta 契约（validate.mjs）或同步 index（reindex.mjs）；管理 roadmap / spec / 开发进度并写入 axm；管理 BUG（提交、优先级、验收、状态流转、关闭、重开）。
+  在以下场景必须立即调用：初始化或补全 axm / `AGENTS.md`；校验 axm-meta 契约（validate.mjs）、同步 index（reindex.mjs）或启动只读预览器（preview.mjs）；管理 roadmap / spec / 开发进度并写入 axm；管理 BUG（提交、优先级、验收、状态流转、关闭、重开）。
 ---
 
 # axm
@@ -30,7 +30,8 @@ axm/
 └── scripts/              # 零依赖 Node 脚本
     ├── scaffold.mjs      # 释放通用规范 + 骨架
     ├── validate.mjs      # 校验契约
-    └── reindex.mjs       # 同步索引
+    ├── reindex.mjs       # 同步索引
+    └── preview.mjs       # 启动只读 localhost 预览器
 ```
 
 ## 5 阶段 SOP
@@ -106,7 +107,7 @@ node <skill-path>/scripts/scaffold.mjs \
 
 **目标**：根据 Phase 1 画像，把"项目特有"的部分填进去。这是整个流程里 AI **唯一**要亲自写 `.md` 的阶段。
 
-**操作**：按 3.1-3.8 顺序推进，每做一件**先读对应的 references 指南**再动手。3.6-3.8 按用户需要可选。
+**操作**：按 3.1-3.5 顺序推进，每做一件**先读对应的 references 指南**再动手。3.6-3.8 是用户触发的可选阶段：只有用户明确要求管理 roadmap/spec、闭合已完成 progress，或建立 BUG 管理时才进入；不要在常规初始化中主动创建 progress/ 或 BUG 结构。
 
 #### 3.1 写 `project/architecture.md`（必须）
 
@@ -155,7 +156,7 @@ deep 文档（具体话题）**本阶段不写**，只建目录和 overview；�
 
 #### 3.6 可选：建立 progress 开发进度
 
-当用户明确要管理 roadmap / spec / 阶段验收时，先读 `<skill-path>/references/progress-doc-guide.md`，再在 `.axm/progress/<initiative>/` 下创建：
+仅当用户明确要管理 roadmap / spec / 阶段验收时，先读 `<skill-path>/references/progress-doc-guide.md`，再在 `.axm/progress/<initiative>/` 下创建：
 
 ```
 progress/<initiative>/
@@ -170,18 +171,19 @@ roadmap 记录较大路线图和事实进度；spec 记录某次阶段开发的�
 
 #### 3.7 可选：闭合已完成 progress
 
-当用户说某个阶段、spec 或 roadmap 已完成，需要"收尾 / 闭合 / 归档"时，先读 `<skill-path>/references/progress-doc-guide.md` 的闭合流程，再更新对应 progress 文档。闭合不是简单把状态改成 done；必须同时：
+仅当用户说某个阶段、spec 或 roadmap 已完成，需要"收尾 / 闭合 / 归档"时，先读 `<skill-path>/references/progress-doc-guide.md` 的闭合流程，再更新对应 progress 文档。闭合不是简单把状态改成 done；必须同时：
 
 - 把已落地且仍长期有效的系统事实同步到 `knowledge/` 或 `project/`
 - 在 roadmap/spec 中记录完成状态、最终验收、commit/PR 或等价证据
 - 把遗留项移动到后续阶段、独立 spec 或明确标为 deferred
+- 检查该 initiative 的 `bugs/` 目录中是否存在未关闭 BUG 文档；不要只看 `bugs/log.md`，单条 BUG 文档才是事实来源
 - 跑 `reindex.mjs --dry-run` 与 `validate.mjs`
 
 已完成但仍有历史参考价值的 progress 文档通常保持 axm-meta `status: active`；只有被新方案取代或不应再作为参考时才改成 `deprecated`。
 
 #### 3.8 可选：建立 BUG 管理（挂在 initiative 下的通用规范）
 
-当用户希望管理 BUG（来自测试 agent、人工测试或生产事故）——需要"BUG 列表 + 优先级 + 验收标准 + 状态流转"——**先读 `<skill-path>/references/bug-doc-guide.md`**，再在 `.axm/progress/<initiative>/bugs/` 下落地。
+仅当用户希望管理 BUG（来自测试 agent、人工测试或生产事故）——需要"BUG 列表 + 优先级 + 验收标准 + 状态流转"——**先读 `<skill-path>/references/bug-doc-guide.md`**，再在 `.axm/progress/<initiative>/bugs/` 下落地。
 
 进入 3.8 前必须先就位的判断（其余约束以 `bug-doc-guide.md` 为准）：
 
@@ -269,7 +271,25 @@ node <skill-path>/scripts/reindex.mjs --target=<项目根>
 
 reindex 会保留已有 `entries` 的顺序和 title/when-to-read，只追加孤儿（标 TODO）、删除失效条目。
 
+`reindex.mjs --dry-run` 显示 unchanged 只表示 index entries 已与文件树同步；它不等于项目契约校验通过。需要确认 axm-meta、路径引用、Knowledge Index 等契约时，仍必须运行 `validate.mjs --target=<项目根>`。
+
 > 闭合已完成 progress 的完整流程见 Phase 3.7；操作完后跑一次 `reindex.mjs --dry-run` + `validate.mjs` 收尾即可。
+
+### 只读预览 .axm
+
+用户想"启动预览器 / 查看器 / 浏览 axm"时，可以启动本地只读预览器：
+
+```bash
+node <skill-path>/scripts/preview.mjs --target=<项目根> [--port=8765]
+```
+
+也可以使用兼容原型图的 Python 包装器：
+
+```bash
+python3 <skill-path>/axm_preview.py --target=<项目根> [--port=8765]
+```
+
+预览器只绑定 `127.0.0.1`，只提供 `GET /`、`GET /api/model`、`GET /api/health` 三类查看接口；Web UI 只展示 `AGENTS.md` 与 `.axm/` 文档、axm-meta、校验摘要、搜索结果和 Canvas 关系图，不提供 scaffold / validate / reindex 执行入口，也不会写入目标仓库。
 
 ## 关键约束（必须遵守）
 

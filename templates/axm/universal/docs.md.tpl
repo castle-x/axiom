@@ -47,7 +47,7 @@ related:
 
 | 字段 | 必填 | 说明 |
 |---|---|---|
-| `status` | ✅ | `active`（生效中）/ `draft`（草稿）/ `deprecated`（已废弃，应删除或重写） |
+| `status` | ✅ | 文档生命周期：`active`（仍可作为上下文参考）/ `draft`（草稿）/ `deprecated`（已废弃，应删除或重写）。它不表示业务状态、任务进度或 BUG 生命周期 |
 | `last-reviewed` | ✅ | 最近一次人工核对规范与现实一致性的日期（ISO 8601）。仅修 typo / 调格式不更新此字段 |
 | `owner` | ✅ | 负责维护的团队或人员标识 |
 | `applies-to` | ✅ | 适用范围。`universal` 表示跨项目通用规范；`project:<name>` 表示绑定到特定项目；可叠加子作用域（如 `project:<name>, frontend`） |
@@ -80,7 +80,7 @@ related:
 
 ### 骨架 C — 索引类
 
-用于所有 `index.md`。
+用于所有 `index.md`。文件名优先级最高：只要是 `index.md`，就使用骨架 C；包括 `progress/<initiative>/index.md`、`progress/<initiative>/specs/index.md`、`progress/<initiative>/bugs/index.md`。
 
 ```yaml
 <!-- axm-meta
@@ -106,6 +106,8 @@ entries:
 | `entries[].title` | ✅ | 简短标题，供 AI 选择时阅读 |
 | `entries[].when-to-read` | ✅ | 触发条件的一句话描述（何时应读取此条目） |
 
+`index.md` 不需要 `progress-type` 或 `initiative`，即使它位于 `progress/` 目录下。
+
 ### 骨架 D — 进度类
 
 用于 `progress/**/*.md`（不含 index.md）。进度文档承载计划、状态与验收信息，不得被当作已实现的系统事实。
@@ -129,6 +131,8 @@ related:
 | `progress-type` | ✅ | `roadmap`（较大路线图）/ `spec`（一次阶段开发计划）/ `decision`（已确认且影响路线的阶段性决策）/ `bug`（一条 BUG 记录） |
 | `initiative` | ✅ | 该进度文档所属的模块、子系统或较大开发主题 |
 
+骨架 D 的 `status` 仍然表示文档生命周期，不表示业务状态。roadmap/spec 的业务进度写在正文里；spec 推荐设置 `## 实施进度` 小节记录 `未开始 / 进行中 / 已完成 / deferred` 等状态。
+
 ## 三、axm metadata 写作细则
 
 1. **字段顺序**：按骨架列表顺序编写，便于审阅
@@ -145,6 +149,7 @@ related:
 - **文件名**：kebab-case（`editor-layout.md`、`auth-redesign.md`）
 - **禁止** 日期前缀：`2026-04-22-plan.md` ✗
 - **禁止** 版本号前缀：`v2-design.md` ✗
+- **唯一日期前缀例外**：单条 BUG 文档允许使用 `progress/<initiative>/bugs/bug-YYYY-MM-DD-<slug>.md`
 - **index.md**：每个目录必须有一份，文件名固定为 `index.md`（不用 `README.md`），内容为骨架 C 索引
 
 ## 五、目录与索引链路
@@ -167,16 +172,16 @@ related:
 └── progress/
     ├── index.md                # 骨架 C：开发进度入口
     └── <initiative>/
-        ├── index.md            # 骨架 C：某个开发主题索引
+        ├── index.md            # 骨架 C：某个开发主题索引（不写 progress-type / initiative）
         ├── roadmap.md          # 骨架 D, progress-type=roadmap
         ├── decisions.md        # 骨架 D, progress-type=decision（可选）
         ├── specs/
-        │   ├── index.md        # 骨架 C
+        │   ├── index.md        # 骨架 C（不写 progress-type / initiative）
         │   └── <spec>.md       # 骨架 D, progress-type=spec
         └── bugs/               # 本主题 BUG 管理（可选）
-            ├── index.md        # 骨架 C
+            ├── index.md        # 骨架 C（不写 progress-type / initiative）
             ├── log.md          # 骨架 D, progress-type=roadmap（BUG 看板）
-            └── <bug-id>.md     # 骨架 D, progress-type=bug
+            └── bug-YYYY-MM-DD-<slug>.md  # 骨架 D, progress-type=bug
 ```
 
 **索引链路**（AI 查找规范/知识的路径）：
@@ -193,6 +198,7 @@ AGENTS.md（根入口·Knowledge Index）
 所有 `index.md` **只做索引**，不写任何规范或知识正文：
 
 - axm metadata：骨架 C（必填 `entries`）
+- 骨架 C 优先于目录语义；`progress/<initiative>/index.md`、`specs/index.md`、`bugs/index.md` 都不写 `progress-type` 或 `initiative`
 - 正文：简短的"职责定位"段 + 以表格或列表形式呈现 `entries`
 - **禁止**在 `index.md` 中直接写规则定义、代码示例、设计细节
 
@@ -272,6 +278,7 @@ AGENTS.md（根入口·Knowledge Index）
 - 阶段列表中的每个已拆分阶段必须链接到对应 `specs/<spec>.md`；尚未拆 spec 的阶段标记为 `未拆 spec`，不得假造链接
 - 依赖关系必须明确写出上游与下游，例如 `phase-b 依赖 phase-a 完成人类验收`，不要只写"后续阶段"
 - 定期更新符合事实的进度，不写流水账
+- roadmap/spec 的业务状态写在正文，不用 axm-meta `status` 表达；spec 推荐使用 `## 实施进度` 小节
 - 当某阶段完成后，若产生长期系统事实，把事实沉淀到 `knowledge/`
 
 ### 11.2 Spec
@@ -297,11 +304,11 @@ spec 可由 Superpowers、OpenSpec、人工讨论或其他外部方法生成；a
 
 - **BUG 必须挂在某个 initiative 下**（即 `progress/<initiative>/bugs/`），禁止在 `progress/` 顶层另建 `bugs/`
 - 若 BUG 无现成归属主题，应先新建 initiative（如 `quality/`、`<module>/`），再在其下开 `bugs/`
-- 每条 BUG 一份独立 `<bug-id>.md`，骨架 D、`progress-type: bug`、`initiative: <所属主题名>`（**禁止填 `bugs`**）
+- 每条 BUG 一份独立 `bug-YYYY-MM-DD-<slug>.md`，骨架 D、`progress-type: bug`、`initiative: <所属主题名>`（**禁止填 `bugs`**）
 - `<initiative>/bugs/log.md` 作为该主题 BUG 看板汇总，骨架 D、`progress-type: roadmap`，`initiative` 与主题一致
 - BUG 文档必须写清：标题、所属 initiative、优先级、复现步骤、期望/实际表现、影响范围、修复验收标准（AI 自动验收 + 人类验收）、当前状态
 - BUG 生命周期使用固定状态：`open` → `in-progress` → `fixed` → `verified` → `closed`；可回退到 `reopened`、`wont-fix`、`duplicate`
-- BUG ID 命名 kebab-case，例如 `bug-2026-05-14-login-timeout.md`；BUG 关闭后**不删除**文档，保留为历史证据
+- BUG ID 命名 kebab-case；完整路径形如 `progress/<initiative>/bugs/bug-2026-05-14-login-timeout.md`，这是唯一允许日期前缀的 `.axm` 文件；BUG 关闭后**不删除**文档，保留为历史证据
 - BUG 修复并验收通过后，若产生长期系统事实或回归测试，应同步沉淀到 `knowledge/` 或 `project/`
 
 详细写作规范见 `<skill-path>/references/bug-doc-guide.md`。

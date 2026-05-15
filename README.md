@@ -54,7 +54,7 @@ AI 会按 5 阶段 SOP 执行（详见 `SKILL.md`）：
 ### 管理开发进度与 BUG
 
 - **roadmap / spec**：`progress/<initiative>/{roadmap.md, specs/<spec>.md}`，验收标准固定分为 *AI 自动验收* + *人类验收*
-- **BUG**：`progress/<initiative>/bugs/<bug-id>.md`，自带优先级（P0–P3）、严重度（Blocker–Trivial）、固定 8 状态生命周期（`open` → `in-progress` → `fixed` → `verified` → `closed`，可走 `reopened` / `wont-fix` / `duplicate`）；BUG 必须挂在某个 initiative 下，找不到归属时新建一个（推荐 `progress/quality/`）
+- **BUG**：`progress/<initiative>/bugs/bug-YYYY-MM-DD-<slug>.md`，自带优先级（P0–P3）、严重度（Blocker–Trivial）、固定 8 状态生命周期（`open` → `in-progress` → `fixed` → `verified` → `closed`，可走 `reopened` / `wont-fix` / `duplicate`）；BUG 必须挂在某个 initiative 下，找不到归属时新建一个（推荐 `progress/quality/`）
 
 对 AI 说"用 axm 提一个 BUG" / "把这个 spec 闭合掉" 即可，AI 会自动遵循 `references/bug-doc-guide.md` 与 `references/progress-doc-guide.md` 的契约。
 
@@ -80,7 +80,7 @@ AI 会按 5 阶段 SOP 执行（详见 `SKILL.md`）：
         └── <initiative>/
             ├── roadmap.md
             ├── specs/<spec>.md
-            └── bugs/<bug-id>.md
+            └── bugs/bug-YYYY-MM-DD-<slug>.md
 ```
 
 ## 直接调用脚本
@@ -98,15 +98,22 @@ node /path/to/axm/scripts/validate.mjs --target=<repo-root>
 
 # 同步 index（保留已有顺序，追加孤儿，删除失效）
 node /path/to/axm/scripts/reindex.mjs --target=<repo-root> [--dry-run]
+
+# 启动只读 localhost 预览器（纯 HTML + Canvas）
+node /path/to/axm/scripts/preview.mjs --target=<repo-root> [--port=8765]
+# 或使用兼容原型图的启动方式
+python3 /path/to/axm/axm_preview.py --target=<repo-root> [--port=8765]
 ```
 
 校验四件事：axm-meta 字段完整性 + 日期格式、`index.md` 与同目录实际文件双向一致、`knowledge/**` 的 `code-refs` 指向的源码真实存在、`AGENTS.md` Knowledge Index 引用的 `.axm` 路径可达。
+
+预览器仅展示 `AGENTS.md` 与 `.axm/` 文档、索引关系、axm-meta、校验摘要和 code-refs 路径；Web UI 不提供任何执行或写入操作。
 
 ## 设计取舍
 
 **AI 判断 + 脚本机械**。脚本负责跨项目逐字一致的内容（漂移会让多项目维护者抓狂），AI 负责必须读代码才写得对的内容（架构、源码地图、任务路由）。
 
-**零 npm 依赖**。`git clone` 即用，不需要 `npm install`。三个脚本加起来约 600 行，全部是 Node 内置模块。
+**零 npm 依赖**。`git clone` 即用，不需要 `npm install`。脚本全部使用 Node 内置模块。
 
 **契约严过头一点点**。AI 基于确定字段做路由决策，契约越严、推理越稳。对人类来说写 axm-meta 的成本远低于每次猜"这字段该填什么"的成本。
 

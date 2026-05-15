@@ -13,7 +13,7 @@ axm 采用**扁平结构**（非 monorepo），git clone 到 `~/.claude/skills/a
 - `SKILL.md` — Anthropic Agent Skills 标准入口（YAML axm-meta + 5 阶段 SOP）
 - `references/*.md` — AI Phase 3 按需加载的写作指南（5 份）
 - `templates/**/*.tpl` — 脚本逐字释放的模板（含 `{{owner}}` / `{{date}}` / `{{project_name}}` 三个变量）
-- `scripts/*.mjs` — 零依赖 Node 脚本（scaffold / validate / reindex）
+- `scripts/*.mjs` — 零依赖 Node 脚本（scaffold / validate / reindex / preview）
 - `scripts/_lib/*.mjs` — 脚本共享模块（axm-meta 解析器、walker、logger）
 - `AGENTS.md` — 本仓库维护入口规则
 
@@ -106,7 +106,7 @@ axm 采用**扁平结构**（非 monorepo），git clone 到 `~/.claude/skills/a
 | 理解 skill 流程 / 修改 SOP | `SKILL.md` |
 | 修改 Phase 3 写作指南 | `references/*.md` |
 | 修改生成内容 / universal 规则 | `templates/**/*.tpl`，必要时同步相关 `references/*.md` |
-| 修改 scaffold/validate/reindex | `scripts/*.mjs` + `scripts/_lib/*.mjs` |
+| 修改 scaffold/validate/reindex/preview | `scripts/*.mjs` + `scripts/_lib/*.mjs` |
 | 了解用户侧产物结构 | `README.md` 的"完成后你的仓库会多出"与 `templates/` |
 | 验证脚本或模板改动 | 在临时目录运行 scaffold → validate → reindex |
 

@@ -244,6 +244,7 @@ function main() {
 
 	log.plain("");
 	log.info(`done. changed=${changed}${dryRun ? " (dry-run)" : ""}, failed=${failed}, total=${indexes.length}`);
+	log.plain(`Tip: reindex only syncs index entries. Run validate.mjs --target=${repoRoot} for contract checks.`);
 	process.exit(failed > 0 ? 1 : 0);
 }
 
