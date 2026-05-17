@@ -463,6 +463,12 @@ describe("AXM preview HTTP server", () => {
 		assert.match(html, /\.meta-table th \{ width: 1%;[^}]*white-space: nowrap;[^}]*overflow-wrap: normal;[^}]*word-break: normal;/);
 		assert.match(html, /\.meta-table td \{ min-width: 0; overflow-wrap: anywhere; \}/);
 		assert.doesNotMatch(html, /\.meta-table th \{ width: 118px;/);
+		assert.match(html, /\.markdown-table-scroll \{ max-width: 100%; overflow-x: auto;/);
+		assert.match(html, /\.markdown table \{ width: max-content; min-width: 100%;/);
+		assert.match(html, /\.markdown th, \.markdown td \{[^}]*overflow-wrap: normal;[^}]*word-break: normal;/);
+		assert.match(html, /html\.push\('<div class="markdown-table-scroll"><table>' \+ table \+ "<\/table><\/div>"\)/);
+		assert.doesNotMatch(html, /\.markdown :where\([^)]*td/);
+		assert.doesNotMatch(html, /\.markdown :where\([^)]*th/);
 		assert.match(html, /function positionSearchResults\(\)/);
 		assert.match(html, /closest\("\.searchbox"\)/);
 		assert.match(html, /getBoundingClientRect\(\)/);

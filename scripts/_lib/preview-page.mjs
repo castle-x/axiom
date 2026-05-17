@@ -393,12 +393,14 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	border-radius: 7px;
 }
 .markdown pre code { padding: 0; border: 0; background: transparent; color: #26374d; }
-.markdown table { display: block; width: 100%; max-width: 100%; overflow: auto; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
-.markdown th, .markdown td { border: 1px solid var(--border); padding: 9px 10px; vertical-align: top; }
+.markdown-table-scroll { max-width: 100%; overflow-x: auto; margin: 16px 0; }
+.markdown table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 13px; }
+.markdown th, .markdown td { border: 1px solid var(--border); padding: 9px 10px; vertical-align: top; overflow-wrap: normal; word-break: normal; }
 .markdown th { background: #f6f8fb; font-weight: 650; }
+.markdown td code, .markdown th code { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
 .markdown blockquote { margin: 16px 0; padding: 0 0 0 14px; border-left: 3px solid var(--border-strong); color: #4d5a69; }
 .markdown ul, .markdown ol { padding-left: 22px; }
-.markdown :where(p, li, blockquote, td, th, a, code) { overflow-wrap: anywhere; }
+.markdown :where(p, li, blockquote, a, code) { overflow-wrap: anywhere; }
 .hit { background: #fff1b8; border-radius: 3px; }
 .inspector {
 	min-width: 0;
@@ -1262,7 +1264,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 				var tag = index === 0 ? "th" : "td";
 				return "<tr>" + cells.map(function (cell) { return "<" + tag + ">" + renderInline(cell) + "</" + tag + ">"; }).join("") + "</tr>";
 			}).join("");
-			html.push("<table>" + table + "</table>");
+			html.push('<div class="markdown-table-scroll"><table>' + table + "</table></div>");
 			tableLines = [];
 		}
 
