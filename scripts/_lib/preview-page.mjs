@@ -51,6 +51,8 @@ export function buildPreviewHtml() {
 	--red: #d93f4b;
 	--shadow: 0 16px 48px rgba(31, 45, 61, .12);
 	--content-head-height: 48px;
+	--inspector-min-width: 380px;
+	--inspector-width: clamp(380px, 32vw, 520px);
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
@@ -284,7 +286,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 .shell {
 	min-height: 0;
 	display: grid;
-	grid-template-columns: 280px minmax(0, 1fr);
+	grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
 	grid-template-rows: minmax(0, 1fr);
 	padding-bottom: 56px;
 }
@@ -337,7 +339,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	min-width: 0;
 	min-height: 0;
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) 360px;
+	grid-template-columns: minmax(0, 1fr) minmax(var(--inspector-min-width), var(--inspector-width));
 	border-bottom: 1px solid var(--border);
 }
 .reader {
@@ -441,9 +443,10 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 .refresh-btn[disabled] { opacity: .55; cursor: wait; }
 .refresh-btn[aria-busy="true"] svg { animation: spin 900ms linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.meta-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.meta-table th, .meta-table td { border-bottom: 1px solid var(--border); padding: 9px 14px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
-.meta-table th { width: 118px; color: #536173; font-weight: 520; background: #fbfcfe; }
+.meta-table { width: 100%; table-layout: auto; border-collapse: collapse; font-size: 13px; }
+.meta-table th, .meta-table td { border-bottom: 1px solid var(--border); padding: 9px 14px; text-align: left; vertical-align: top; }
+.meta-table th { width: 1%; color: #536173; font-weight: 520; white-space: nowrap; overflow-wrap: normal; word-break: normal; background: #fbfcfe; }
+.meta-table td { min-width: 0; overflow-wrap: anywhere; }
 .chip {
 	display: inline-flex;
 	align-items: center;
@@ -581,10 +584,10 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 .result-sub { font-size: 11px; color: var(--muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .empty { color: var(--muted); padding: 20px; font-size: 13px; }
 @media (max-width: 1050px) {
+	:root { --inspector-min-width: 340px; --inspector-width: clamp(340px, 36vw, 420px); }
 	.topbar { grid-template-columns: 220px minmax(170px, 240px) minmax(220px, 1fr); }
 	.stats { display: none; }
 	.shell { grid-template-columns: 240px minmax(0, 1fr); }
-	.doc-pane { grid-template-columns: minmax(0, 1fr) 310px; }
 	.legend { top: auto; bottom: 24px; }
 }
 </style>

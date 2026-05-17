@@ -379,6 +379,14 @@ describe("AXM preview HTTP server", () => {
 		assert.match(html, /--search-results-top/);
 		assert.match(html, /--search-results-left/);
 		assert.match(html, /--search-results-width/);
+		assert.match(html, /--inspector-min-width: 380px/);
+		assert.match(html, /--inspector-width: clamp\(380px, 32vw, 520px\)/);
+		assert.match(html, /grid-template-columns: minmax\(240px, 280px\) minmax\(0, 1fr\)/);
+		assert.match(html, /grid-template-columns: minmax\(0, 1fr\) minmax\(var\(--inspector-min-width\), var\(--inspector-width\)\)/);
+		assert.match(html, /\.meta-table \{ width: 100%; table-layout: auto;/);
+		assert.match(html, /\.meta-table th \{ width: 1%;[^}]*white-space: nowrap;[^}]*overflow-wrap: normal;[^}]*word-break: normal;/);
+		assert.match(html, /\.meta-table td \{ min-width: 0; overflow-wrap: anywhere; \}/);
+		assert.doesNotMatch(html, /\.meta-table th \{ width: 118px;/);
 		assert.match(html, /function positionSearchResults\(\)/);
 		assert.match(html, /closest\("\.searchbox"\)/);
 		assert.match(html, /getBoundingClientRect\(\)/);
