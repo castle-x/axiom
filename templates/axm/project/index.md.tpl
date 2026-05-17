@@ -1,5 +1,5 @@
 <!-- axm-meta
-status: active
+doc-state: current
 last-reviewed: {{date}}
 owner: {{owner}}
 entries: []

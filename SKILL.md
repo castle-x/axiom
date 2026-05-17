@@ -1,9 +1,9 @@
 ---
 name: axm
 description: |
-  为项目建立 AI 可读的上下文知识库——`.axm/` 目录（规范 / 知识 / 索引 / 进度四类文档）加根目录 `AGENTS.md` 路由表，让 AI 接手任务时不必每次重新解释技术栈与架构。
+  为项目建立 AI 可读的上下文知识库——`.axm/` 目录（规范 / 知识 / 索引 / 进度四类文档）加根目录 `AGENTS.md` 路由表，用 `doc-state` 区分文档是否仍应作为上下文，让 AI 接手任务时不必每次重新解释技术栈与架构。
 
-  在以下场景必须立即调用：初始化或补全 axm / `AGENTS.md`；校验 axm-meta 契约（validate.mjs）、同步 index（reindex.mjs）或启动只读预览器（preview.mjs）；管理 roadmap / spec / 开发进度并写入 axm；管理 BUG（提交、优先级、验收、状态流转、关闭、重开）。
+  在以下场景必须立即调用：初始化或补全 axm / `AGENTS.md`；校验 axm-meta 契约（validate.mjs）、同步 index（reindex.mjs）或启动只读预览器（preview.mjs）；管理 roadmap / spec / 开发进度并写入 axm；管理 BUG（提交、优先级、验收、workflow-state 流转、关闭、重开）。
 ---
 
 # axm
@@ -171,19 +171,19 @@ roadmap 记录较大路线图和事实进度；spec 记录某次阶段开发的�
 
 #### 3.7 可选：闭合已完成 progress
 
-仅当用户说某个阶段、spec 或 roadmap 已完成，需要"收尾 / 闭合 / 归档"时，先读 `<skill-path>/references/progress-doc-guide.md` 的闭合流程，再更新对应 progress 文档。闭合不是简单把状态改成 done；必须同时：
+仅当用户说某个阶段、spec 或 roadmap 已完成，需要"收尾 / 闭合 / 归档"时，先读 `<skill-path>/references/progress-doc-guide.md` 的闭合流程，再更新对应 progress 文档。闭合不是简单把 `workflow-state` 改成 `closed`；必须同时：
 
 - 把已落地且仍长期有效的系统事实同步到 `knowledge/` 或 `project/`
-- 在 roadmap/spec 中记录完成状态、最终验收、commit/PR 或等价证据
+- 在 roadmap/spec 的 axm-meta 中更新 `workflow-state` 与 `state-updated`，正文记录最终验收、commit/PR 或等价证据
 - 把遗留项移动到后续阶段、独立 spec 或明确标为 deferred
 - 检查该 initiative 的 `bugs/` 目录中是否存在未关闭 BUG 文档；不要只看 `bugs/log.md`，单条 BUG 文档才是事实来源
 - 跑 `reindex.mjs --dry-run` 与 `validate.mjs`
 
-已完成但仍有历史参考价值的 progress 文档通常保持 axm-meta `status: active`；只有被新方案取代或不应再作为参考时才改成 `deprecated`。
+已完成但仍有历史参考价值的 progress 文档通常保持 axm-meta `doc-state: current`；只有被新方案取代或不应再作为参考时才改成 `deprecated`。progress 非 index 文档的当前业务/流程状态只以 `workflow-state` 为准，正文只保留时间线、验收证据和说明。
 
 #### 3.8 可选：建立 BUG 管理（挂在 initiative 下的通用规范）
 
-仅当用户希望管理 BUG（来自测试 agent、人工测试或生产事故）——需要"BUG 列表 + 优先级 + 验收标准 + 状态流转"——**先读 `<skill-path>/references/bug-doc-guide.md`**，再在 `.axm/progress/<initiative>/bugs/` 下落地。
+仅当用户希望管理 BUG（来自测试 agent、人工测试或生产事故）——需要"BUG 列表 + 优先级 + 验收标准 + workflow-state 流转"——**先读 `<skill-path>/references/bug-doc-guide.md`**，再在 `.axm/progress/<initiative>/bugs/` 下落地。
 
 进入 3.8 前必须先就位的判断（其余约束以 `bug-doc-guide.md` 为准）：
 
@@ -289,7 +289,7 @@ node <skill-path>/scripts/preview.mjs [--target=<项目根>] [--port=8765]
 python3 <skill-path>/axm_preview.py [--target=<项目根>] [--port=8765]
 ```
 
-预览器只绑定 `127.0.0.1`；Web UI 可通过自带的最近项目下拉与 `Path` 输入框切换当前预览项目，并在浏览器本地保留最近打开路径，不调用系统文件选择器。除切换本 preview 进程的当前 target 外，预览器只展示 `AGENTS.md` 与 `.axm/` 文档、axm-meta、校验摘要、搜索结果和 Canvas 关系图，不提供 scaffold / validate / reindex 执行入口，也不会写入目标仓库。
+预览器只绑定 `127.0.0.1`；Web UI 可通过 `Open` 调用系统文件夹选择器、通过项目名下拉切换最近打开路径，或通过 `Path` 输入框手动切换当前预览项目。除切换本 preview 进程的当前 target 外，预览器只展示 `AGENTS.md` 与 `.axm/` 文档、axm-meta、校验摘要、搜索结果和 Canvas 关系图，不提供 scaffold / validate / reindex 执行入口，也不会写入目标仓库。
 
 ## 关键约束（必须遵守）
 

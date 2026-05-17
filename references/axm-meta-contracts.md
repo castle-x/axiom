@@ -6,16 +6,16 @@
 
 | 骨架 | 用在哪 | 必填字段 | 识别标志 |
 |---|---|---|---|
-| **A 规范** | `universal/*.md` · `project/*.md`（不含 index） | `status` · `last-reviewed` · `owner` · `applies-to` | 有 `applies-to` |
-| **B 知识** | `knowledge/**/*.md`（不含 index） | `status` · `last-reviewed` · `owner` · `depth` · `code-refs` | 有 `depth` + `code-refs` |
-| **C 索引** | 所有 `index.md`，包括 `progress/<initiative>/index.md`、`progress/<initiative>/specs/index.md`、`progress/<initiative>/bugs/index.md` | `status` · `last-reviewed` · `owner` · `entries` | 文件名为 `index.md`，有 `entries` |
-| **D 进度** | `progress/**/*.md`（不含 index） | `status` · `last-reviewed` · `owner` · `progress-type` · `initiative` | 有 `progress-type` + `initiative` |
+| **A 规范** | `universal/*.md` · `project/*.md`（不含 index） | `doc-state` · `last-reviewed` · `owner` · `applies-to` | 有 `applies-to` |
+| **B 知识** | `knowledge/**/*.md`（不含 index） | `doc-state` · `last-reviewed` · `owner` · `depth` · `code-refs` | 有 `depth` + `code-refs` |
+| **C 索引** | 所有 `index.md`，包括 `progress/<initiative>/index.md`、`progress/<initiative>/specs/index.md`、`progress/<initiative>/bugs/index.md` | `doc-state` · `last-reviewed` · `owner` · `entries` | 文件名为 `index.md`，有 `entries` |
+| **D 进度** | `progress/**/*.md`（不含 index） | `doc-state` · `last-reviewed` · `owner` · `progress-type` · `initiative` · `workflow-state` · `state-updated` | 有 `progress-type` + `initiative` |
 
 ## 骨架 A（规范）模板
 
 ```yaml
 <!-- axm-meta
-status: active
+doc-state: current
 last-reviewed: 2026-05-07
 owner: your-team
 applies-to: [project:<name>]     # 或 [universal] / [project:<name>, frontend]
@@ -28,7 +28,7 @@ related:                          # 可选
 
 ```yaml
 <!-- axm-meta
-status: active
+doc-state: current
 last-reviewed: 2026-05-07
 owner: your-team
 depth: overview                   # 或 deep
@@ -46,7 +46,7 @@ related:                          # 可选
 
 ```yaml
 <!-- axm-meta
-status: active
+doc-state: current
 last-reviewed: 2026-05-07
 owner: your-team
 entries:
@@ -67,17 +67,19 @@ entries:
 
 ```yaml
 <!-- axm-meta
-status: active
+doc-state: current
 last-reviewed: 2026-05-07
 owner: your-team
 progress-type: roadmap            # roadmap / spec / decision / bug
 initiative: editor-redesign
+workflow-state: in-progress        # 取值按 progress-type 使用对应枚举
+state-updated: 2026-05-07          # workflow-state 最后确认日期
 related:                          # 可选
   - ../knowledge/frontend/overview.md
 -->
 ```
 
-**关键规则**：进度文档只描述计划、业务状态、验收与阶段性决策。axm-meta `status` 表示文档生命周期，不表示业务或任务进度；progress spec 的业务状态应写在正文，推荐使用 `## 实施进度` 小节。已经落地的系统事实应同步写入 `knowledge/`。
+**关键规则**：进度文档只描述计划、业务状态、验收与阶段性决策。axm-meta `doc-state` 表示 AI 是否应继续把文档当上下文读，不表示业务或任务进度；progress 非 index 文档的当前业务/流程状态只写 `workflow-state`，正文只保留时间线、验收证据与必要说明。已经落地的系统事实应同步写入 `knowledge/`。
 
 **BUG 特例**：BUG 文档只能作为直接子文件放在 `progress/<initiative>/bugs/` 下，禁止 `progress/bugs/` 顶层目录，也禁止 `bugs/` 下再建嵌套目录；单条 BUG 文件名必须是 `bug-YYYY-MM-DD-<slug>.md`，`progress-type: bug`，`initiative` 必须填路径里的真实主题且不得为 `bugs`；`bugs/log.md` 是看板，使用 `progress-type: roadmap`；`bugs/index.md` 仍是骨架 C。
 
@@ -85,7 +87,7 @@ related:                          # 可选
 
 | 字段 | 类型 | 约束 |
 |---|---|---|
-| `status` | enum | `active` / `draft` / `deprecated`；表示文档生命周期，不表示业务状态、任务进度或 BUG 生命周期 |
+| `doc-state` | enum | `current` / `draft` / `deprecated`；表示 AI 是否应继续把文档当上下文读，不表示业务状态、任务进度或 BUG 生命周期 |
 | `last-reviewed` | date | `YYYY-MM-DD`；人工核对过才更新 |
 | `owner` | string | 团队或人员标识 |
 | `applies-to` | list | 非空；`universal` 或 `project:<name>` 或其叠加 |
@@ -93,6 +95,8 @@ related:                          # 可选
 | `code-refs` | list<string> | 非空；**每条路径必须真实存在** |
 | `progress-type` | enum | `roadmap` / `spec` / `decision` / `bug` |
 | `initiative` | string | 所属模块、子系统或较大开发主题 |
+| `workflow-state` | enum | roadmap/spec: `proposed` / `ready` / `in-progress` / `blocked` / `implemented` / `verified` / `closed` / `deferred` / `superseded`；decision: `proposed` / `accepted` / `rejected` / `superseded`；bug: `open` / `in-progress` / `fixed` / `verified` / `closed` / `reopened` / `wont-fix` / `duplicate` |
+| `state-updated` | date | `YYYY-MM-DD`；`workflow-state` 最后确认日期 |
 | `entries[].path` | string | 文件 `*.md` 或子目录 `<name>/` |
 | `entries[].title` | string | 简短标题 |
 | `entries[].when-to-read` | string | 触发条件一句话 |

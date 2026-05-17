@@ -110,4 +110,4 @@
 | 第二个 agent / 工具收尾 review | `.axm/universal/review.md`  |
 | roadmap / spec / 开发进度 | `.axm/progress/index.md`    |
 
-`.axm/` 目录分区：`universal/`（通用流程）、`project/`（项目规范）、`knowledge/`（系统设计事实）、`progress/`（roadmap、阶段 spec、验收状态）。各目录有 `index.md` 总索引。
+`.axm/` 目录分区：`universal/`（通用流程）、`project/`（项目规范）、`knowledge/`（系统设计事实）、`progress/`（roadmap、阶段 spec、验收证据；当前状态看 `workflow-state`）。各目录有 `index.md` 总索引。

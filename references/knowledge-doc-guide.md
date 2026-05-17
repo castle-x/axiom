@@ -45,7 +45,7 @@ knowledge/
 
 ```md
 <!-- axm-meta
-status: active
+doc-state: current
 last-reviewed: 2026-05-07
 owner: your-team
 depth: overview
@@ -95,7 +95,7 @@ related:
 
 ```md
 <!-- axm-meta
-status: active
+doc-state: current
 last-reviewed: 2026-05-07
 owner: your-team
 depth: deep

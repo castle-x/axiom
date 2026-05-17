@@ -2,7 +2,7 @@
  * 极简 axm metadata 解析器（零依赖）。
  *
  * 仅覆盖 .axm 四套骨架（A/B/C/D）实际用到的 YAML 子集：
- *   - 标量字段：status / last-reviewed / owner / depth / progress-type / initiative / applies-to(inline)
+ *   - 标量字段：doc-state / last-reviewed / owner / depth / progress-type / initiative / workflow-state / state-updated / applies-to(inline)
  *   - inline 列表：applies-to: [universal] / [project:name, scope]
  *   - block 列表（字符串）：related / code-refs
  *   - entries 对象列表：每项含 path / title / when-to-read

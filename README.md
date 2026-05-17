@@ -10,7 +10,7 @@ Axiom 把那份"你希望 AI 每次都已经知道的事情"沉淀成项目内�
 
 - 跨项目逐字一致的"宪法"（DEVLOOP、文档契约、质量门禁、VCS 规范、二审 review 契约）由脚本释放
 - 项目特有的架构、模块边界、源码地图由 AI 读完代码后撰写
-- BUG / roadmap / spec 等阶段性内容用统一骨架管理
+- BUG / roadmap / spec 等阶段性内容用 `doc-state` + `workflow-state` 统一骨架管理
 - 整套契约由零依赖 Node 脚本机械校验，避免人工漂移
 
 `.axm/` 的设计让 Claude Code、Codex、OpenCode 等支持 [Anthropic Agent Skill](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) 规范的工具直接消费这份上下文。
@@ -53,8 +53,8 @@ AI 会按 5 阶段 SOP 执行（详见 `SKILL.md`）：
 
 ### 管理开发进度与 BUG
 
-- **roadmap / spec**：`progress/<initiative>/{roadmap.md, specs/<spec>.md}`，验收标准固定分为 *AI 自动验收* + *人类验收*
-- **BUG**：`progress/<initiative>/bugs/bug-YYYY-MM-DD-<slug>.md`，自带优先级（P0–P3）、严重度（Blocker–Trivial）、固定 8 状态生命周期（`open` → `in-progress` → `fixed` → `verified` → `closed`，可走 `reopened` / `wont-fix` / `duplicate`）；BUG 必须挂在某个 initiative 下，找不到归属时新建一个（推荐 `progress/quality/`）
+- **roadmap / spec**：`progress/<initiative>/{roadmap.md, specs/<spec>.md}`，用 axm-meta `workflow-state` 记录当前流程状态，验收标准固定分为 *AI 自动验收* + *人类验收*
+- **BUG**：`progress/<initiative>/bugs/bug-YYYY-MM-DD-<slug>.md`，自带优先级（P0–P3）、严重度（Blocker–Trivial）、固定 8 状态生命周期（`open` → `in-progress` → `fixed` → `verified` → `closed`，可走 `reopened` / `wont-fix` / `duplicate`），当前状态同样以 axm-meta `workflow-state` 为准；BUG 必须挂在某个 initiative 下，找不到归属时新建一个（推荐 `progress/quality/`）
 
 对 AI 说"用 axm 提一个 BUG" / "把这个 spec 闭合掉" 即可，AI 会自动遵循 `references/bug-doc-guide.md` 与 `references/progress-doc-guide.md` 的契约。
 
@@ -78,19 +78,19 @@ AI 会按 5 阶段 SOP 执行（详见 `SKILL.md`）：
     │   └── <system>/overview.md
     └── progress/
         └── <initiative>/
-            ├── roadmap.md
-            ├── specs/<spec>.md
+            ├── roadmap.md              # doc-state + workflow-state
+            ├── specs/<spec>.md         # doc-state + workflow-state
             └── bugs/bug-YYYY-MM-DD-<slug>.md
 ```
 
 ## axiom_preview 只读预览器
 
-`axiom_preview` 是 `.axm/` 的本地只读浏览器：启动一个 `127.0.0.1` 服务后，可以在顶部切换最近打开的项目或输入项目路径，自动识别项目下的 `.axm/`，不用为每个项目单独开一个服务。
+`axiom_preview` 是 `.axm/` 的本地只读浏览器：启动一个 `127.0.0.1` 服务后，可以通过 `Open` 打开系统文件夹选择器、从项目名下拉切换最近打开的项目，或用 `Path` 输入项目路径。预览器会自动识别项目下的 `.axm/`，不用为每个项目单独开一个服务。
 
 它适合快速查看：
 
 - `AGENTS.md` 与 `.axm/` 文件树
-- Markdown 正文、axm-meta 与契约校验结果
+- Markdown 正文、axm-meta（含 `doc-state` / `workflow-state`）与契约校验结果
 - 搜索结果、索引关系与 Knowledge Graph
 - 最近打开项目的一键切换
 

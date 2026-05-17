@@ -1,5 +1,5 @@
 <!-- axm-meta
-status: active
+doc-state: current
 last-reviewed: {{date}}
 owner: {{owner}}
 entries:
@@ -14,7 +14,7 @@ entries:
     when-to-read: 理解系统设计、模块结构、设计决策
   - path: progress/
     title: 开发进度
-    when-to-read: 查看 roadmap、阶段 spec、验收状态与开发进展
+    when-to-read: 查看 roadmap、阶段 spec、验收证据与开发进展
 -->
 
 # .axm — AI 开发上下文入口
@@ -28,7 +28,7 @@ entries:
 | `universal/` | 跨项目通用的流程/质量/文档/VCS 规范 | 长期 |
 | `project/` | 绑定本项目的架构/设计/编码规范 | 长期 |
 | `knowledge/` | 当前系统的设计事实，随代码演进而更新 | 中长期 |
-| `progress/` | roadmap、阶段 spec、验收状态与开发进展 | 阶段性 |
+| `progress/` | roadmap、阶段 spec、验收证据与开发进展 | 阶段性 |
 
 ## 文档规则
 

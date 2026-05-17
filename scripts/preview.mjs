@@ -15,6 +15,8 @@
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { pathToFileURL } from "node:url";
 import { buildPreviewModel } from "./_lib/preview-data.mjs";
 import { buildPreviewHtml } from "./_lib/preview-page.mjs";
@@ -22,6 +24,7 @@ import { buildPreviewHtml } from "./_lib/preview-page.mjs";
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 8765;
 const ALLOW = "GET, HEAD, OPTIONS, POST";
+const execFileAsync = promisify(execFile);
 
 export function createPreviewServer({ target = "." } = {}) {
 	let activeTarget = resolveInitialTarget(target);
@@ -46,6 +49,17 @@ export function createPreviewServer({ target = "." } = {}) {
 				try {
 					const body = await readJsonBody(req);
 					const nextTarget = resolveAxmTarget(body.path);
+					activeTarget = nextTarget;
+					send(res, 200, buildPreviewModel(activeTarget.path), req.method);
+				} catch (error) {
+					sendError(res, error, req.method);
+				}
+				return;
+			}
+			if (url.pathname === "/api/pick-target") {
+				try {
+					const chosenPath = await pickTargetFolder(activeTarget?.path);
+					const nextTarget = resolveAxmTarget(chosenPath);
 					activeTarget = nextTarget;
 					send(res, 200, buildPreviewModel(activeTarget.path), req.method);
 				} catch (error) {
@@ -142,6 +156,24 @@ function targetInfo(projectPath) {
 		path: resolved,
 		name: path.basename(resolved),
 	};
+}
+
+async function pickTargetFolder(defaultPath) {
+	if (process.platform !== "darwin") {
+		throw previewError("target_picker_unsupported", "System folder picker is only available on macOS. Use Path instead.", 501);
+	}
+	const script = defaultPath && fs.existsSync(defaultPath)
+		? `POSIX path of (choose folder with prompt "Select an Axiom project folder" default location (POSIX file ${JSON.stringify(defaultPath)}))`
+		: 'POSIX path of (choose folder with prompt "Select an Axiom project folder")';
+	try {
+		const { stdout } = await execFileAsync("osascript", ["-e", script], { timeout: 600000 });
+		return stdout.trim();
+	} catch (error) {
+		if (/User canceled/i.test(`${error.message}\n${error.stderr ?? ""}`)) {
+			throw previewError("target_pick_cancelled", "Project selection cancelled.", 400);
+		}
+		throw previewError("target_picker_failed", error.message, 500);
+	}
 }
 
 function isSameOriginPost(req) {
@@ -289,7 +321,7 @@ async function main() {
 		console.log(`Axiom Preview: ${url}`);
 		console.log(`target: ${initialTarget ? initialTarget.path : "not selected; use Open Project or Path in the UI"}`);
 		console.log("view: GET /, GET /api/model, GET /api/target, GET /api/health");
-		console.log("target switch: POST /api/target");
+		console.log("target switch: POST /api/target, POST /api/pick-target");
 	} catch (error) {
 		console.error(error.message);
 		process.exit(1);

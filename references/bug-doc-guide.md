@@ -7,7 +7,7 @@
 1. BUG 文档**必须**是 `progress/<initiative>/bugs/` 下的直接子文件；禁止在 `progress/` 顶层另建 `bugs/`，禁止在 `bugs/` 下再建嵌套目录，禁止把 BUG 散在不带 initiative 的位置
 2. axm-meta `initiative` 字段填**实际主题名**（如 `auth-redesign`、`quality`），**禁止填 `bugs`**
 3. 文件名 `progress/<initiative>/bugs/bug-YYYY-MM-DD-<slug>.md`，kebab-case，是 axm 日期前缀禁令的唯一豁免
-4. 状态值必须在固定 8 个内（见 §3）；任何状态变更**只追加时间线**，禁止改写历史
+4. `workflow-state` 必须在固定 8 个内（见 §3）；任何状态变更都同步 `state-updated`，正文**只追加时间线**，禁止改写历史
 5. BUG 关闭后**保留**文件，不删除
 6. 没有归属主题时，**先新建 initiative** 再放 BUG（见 §1）
 
@@ -42,11 +42,13 @@ progress/<initiative>/
 
 ```markdown
 <!-- axm-meta
-status: active
+doc-state: current
 last-reviewed: 2026-05-14
 owner: qa-team
 progress-type: bug
 initiative: auth-redesign        # 实际主题名，禁填 bugs
+workflow-state: open
+state-updated: 2026-05-14
 related:
   - ../roadmap.md
   - ../../../knowledge/<system>/overview.md
@@ -64,7 +66,6 @@ related:
 | 提交时间 | 2026-05-14 |
 | 优先级 | P1 |
 | 严重度 | Major |
-| 当前状态 | `open` |
 | 影响模块 | `apps/web/auth`、`packages/api-client` |
 | 影响版本 | `v1.4.2` |
 | 关联 PR / commit | （修复后填） |
@@ -96,7 +97,7 @@ related:
 | 2026-05-14 | open | api-tester | 提交 BUG |
 ```
 
-骨架中的所有小节均**必填**；可观测但暂时未知的项写"待定位"，不能整段省略。
+当前状态以 axm-meta 的 `workflow-state` 为唯一来源；正文元信息不再重复写"当前状态"，时间线只记录状态变更历史。骨架中的所有小节均**必填**；可观测但暂时未知的项写"待定位"，不能整段省略。
 
 ## 3. 优先级、严重度、生命周期
 
@@ -123,7 +124,7 @@ related:
 | `wont-fix` | 明确不修 | 人类决策 | 必须写理由与替代方案；视同终态 |
 | `duplicate` | 已有同等 BUG | 任何确认重复者 | 必须指向原 BUG ID；视同终态 |
 
-`reopened` 后回到 `in-progress` 重走流程。归档大量旧 BUG 可整体改 axm-meta `status: deprecated`，文件保留。
+`reopened` 后回到 `in-progress` 重走流程。归档大量旧 BUG 可整体改 axm-meta `doc-state: deprecated`，文件保留。
 
 ## 4. 看板 `<initiative>/bugs/log.md`
 
@@ -139,10 +140,10 @@ related:
 
 | 角色 | 关键动作（按顺序） |
 |---|---|
-| **测试 agent**（提交） | ① 复现 ≥2 次（间歇复现写"N/M"）→ ② 选/建归属 initiative → ③ 确保 `bugs/{index,log}.md` 存在 → ④ 跨 initiative 查重 → ⑤ 创建 `bug-YYYY-MM-DD-<slug>.md`（骨架填齐）→ ⑥ 看板登记 → ⑦ `reindex.mjs --dry-run` 后落盘 → ⑧ `validate.mjs` 零 ERROR → ⑨ 状态停留 `open`，不自动接单 |
-| **开发 agent**（修复） | ① 改状态 `in-progress` 并记时间线 → ② 在"根因分析"补全（更大设计开 spec）→ ③ 按"AI 自动验收"区块先写失败测试 → ④ 修复使其通过 → ⑤ 跑全套验收，状态 `fixed` 并记 commit/PR → ⑥ 不自动 `verified` |
-| **验收 agent / 人类** | ① 拉修复后代码 → ② 跑 AI 自动验收并存输出 → ③ 跑人类验收并存截图 / 路径 → ④ 通过 → `verified`；不通过 → `reopened` 并写回归证据 |
-| **维护方**（闭合） | ① 跟踪期 ≥1 发布周期无回归 → 状态 `closed` → ② 长期事实同步到 `knowledge/` → ③ 看板从"未关闭"移到"最近关闭"→ ④ 文件保留 → ⑤ `reindex.mjs` + `validate.mjs` |
+| **测试 agent**（提交） | ① 复现 ≥2 次（间歇复现写"N/M"）→ ② 选/建归属 initiative → ③ 确保 `bugs/{index,log}.md` 存在 → ④ 跨 initiative 查重 → ⑤ 创建 `bug-YYYY-MM-DD-<slug>.md`（骨架填齐）→ ⑥ 看板登记 → ⑦ `reindex.mjs --dry-run` 后落盘 → ⑧ `validate.mjs` 零 ERROR → ⑨ `workflow-state` 停留 `open`，不自动接单 |
+| **开发 agent**（修复） | ① 改 `workflow-state: in-progress`、同步 `state-updated` 并记时间线 → ② 在"根因分析"补全（更大设计开 spec）→ ③ 按"AI 自动验收"区块先写失败测试 → ④ 修复使其通过 → ⑤ 跑全套验收，改 `workflow-state: fixed` 并记 commit/PR → ⑥ 不自动 `verified` |
+| **验收 agent / 人类** | ① 拉修复后代码 → ② 跑 AI 自动验收并存输出 → ③ 跑人类验收并存截图 / 路径 → ④ 通过 → `workflow-state: verified`；不通过 → `workflow-state: reopened` 并写回归证据 |
+| **维护方**（闭合） | ① 跟踪期 ≥1 发布周期无回归 → `workflow-state: closed` → ② 长期事实同步到 `knowledge/` → ③ 看板从"未关闭"移到"最近关闭"→ ④ 文件保留 → ⑤ `reindex.mjs` + `validate.mjs` |
 
 ## 6. 与其他文档的协同
 
@@ -156,10 +157,10 @@ related:
 ## 7. 自查清单（提交 / 关闭前过一遍）
 
 - [ ] 路径在 `progress/<initiative>/bugs/`，完整文件名形如 `progress/<initiative>/bugs/bug-YYYY-MM-DD-<slug>.md`
-- [ ] axm-meta `progress-type: bug`，`initiative` 是真实主题名
-- [ ] 元信息表 7 项齐全（ID / 所属 initiative / 提交人 / 优先级 / 严重度 / 当前状态 / 影响模块）
+- [ ] axm-meta `progress-type: bug`，`initiative` 是真实主题名，`workflow-state` 与 `state-updated` 已填写
+- [ ] 元信息表 6 项齐全（ID / 所属 initiative / 提交人 / 优先级 / 严重度 / 影响模块）
 - [ ] 复现步骤、期望 / 实际表现、修复验收标准（AI + 人类）三段不为空
-- [ ] 状态值在 8 个之内；时间线只追加未改写
+- [ ] `workflow-state` 在 8 个之内；时间线只追加未改写
 - [ ] 已在所属 `<initiative>/bugs/log.md` 登记
 - [ ] 若是新建的 initiative，已建 `<initiative>/index.md`
 - [ ] 关闭时长期事实已同步到 `knowledge/`，文件保留未删

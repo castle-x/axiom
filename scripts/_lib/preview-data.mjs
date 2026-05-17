@@ -49,7 +49,7 @@ function readAgentsDocument(absPath) {
 	const relPath = "AGENTS.md";
 	const title = inferTitle(raw, relPath);
 	const subtitle = inferSubtitle(raw);
-	const meta = { status: "active" };
+	const meta = { "doc-state": "current" };
 	return {
 		id: relPath,
 		path: relPath,
@@ -145,7 +145,13 @@ function stripMetadata(raw) {
 }
 
 function buildSearchText({ relPath, title, subtitle, body, meta }) {
-	const text = [relPath, title, subtitle, body, JSON.stringify(meta)].join("\n");
+	const metaText = [
+		JSON.stringify(meta),
+		meta["doc-state"],
+		meta["workflow-state"],
+		meta["state-updated"],
+	].filter(Boolean).join("\n");
+	const text = [relPath, title, subtitle, body, metaText].join("\n");
 	return `${text}\n${text.toLowerCase()}`;
 }
 
@@ -181,7 +187,9 @@ function buildTree(documents) {
 			title: doc.title,
 			subtitle: doc.subtitle,
 			kind: doc.kind,
-			status: doc.meta.status ?? null,
+			docState: docStateForDoc(doc),
+			workflowState: workflowStateForDoc(doc),
+			displayState: displayStateForDoc(doc),
 		});
 	}
 	sortTree(root);
@@ -245,7 +253,9 @@ function buildGraph({ documents, documentMap, repoRoot }) {
 			title: doc.title,
 			subtitle: doc.subtitle,
 			kind: doc.kind,
-			status: doc.meta.status ?? "unknown",
+			docState: docStateForDoc(doc),
+			workflowState: workflowStateForDoc(doc),
+			displayState: displayStateForDoc(doc),
 		});
 	}
 
@@ -257,7 +267,7 @@ function buildGraph({ documents, documentMap, repoRoot }) {
 			label: "AGENTS.md",
 			title: "AGENTS.md",
 			subtitle: "AI 开发上下文入口",
-			status: "active",
+			displayState: "current",
 		});
 		const rootIndexPath = resolveIndexDocPath(".axm", documentMap);
 		if (rootIndexPath) {
@@ -289,7 +299,7 @@ function buildGraph({ documents, documentMap, repoRoot }) {
 				label: path.posix.basename(id),
 				title: id,
 				subtitle: "code-ref",
-				status: fs.existsSync(path.join(repoRoot, ref)) ? "active" : "missing",
+				displayState: fs.existsSync(path.join(repoRoot, ref)) ? "current" : "missing",
 			});
 			addEdge({ from: doc.path, to: id, type: "code-ref", label: "code-ref" });
 		}
@@ -305,7 +315,7 @@ function buildGraph({ documents, documentMap, repoRoot }) {
 				label: `[${scope}]`,
 				title: scope,
 				subtitle: "applies-to",
-				status: "active",
+				displayState: "current",
 			});
 			addEdge({ from: doc.path, to: id, type: "applies-to", label: "applies-to" });
 		}
@@ -363,11 +373,14 @@ function isIndexDocName(name) {
 }
 
 function buildSummary(documents, validation) {
-	const byStatus = { active: 0, draft: 0, deprecated: 0, unknown: 0 };
+	const byDocState = { current: 0, draft: 0, deprecated: 0, unknown: 0 };
+	const byWorkflowState = {};
 	for (const doc of documents) {
-		const status = doc.meta.status;
-		if (status in byStatus) byStatus[status]++;
-		else byStatus.unknown++;
+		const docState = docStateForDoc(doc);
+		const workflowState = workflowStateForDoc(doc);
+		if (docState in byDocState) byDocState[docState]++;
+		else byDocState.unknown++;
+		if (workflowState) byWorkflowState[workflowState] = (byWorkflowState[workflowState] ?? 0) + 1;
 	}
 	const agentsDocs = documents.filter((doc) => doc.kind === "agents").length;
 	return {
@@ -377,9 +390,22 @@ function buildSummary(documents, validation) {
 		errors: validation.errors,
 		warnings: validation.warnings,
 		status: validation.status,
-		byStatus,
+		byDocState,
+		byWorkflowState,
 		lines: documents.reduce((sum, doc) => sum + doc.lineCount, 0),
 	};
+}
+
+function docStateForDoc(doc) {
+	return doc.meta["doc-state"] ?? "unknown";
+}
+
+function workflowStateForDoc(doc) {
+	return doc.meta["workflow-state"] ?? null;
+}
+
+function displayStateForDoc(doc) {
+	return workflowStateForDoc(doc) ?? docStateForDoc(doc) ?? "unknown";
 }
 
 function normalizePath(p) {

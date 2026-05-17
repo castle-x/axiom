@@ -40,7 +40,7 @@ function makeTempRepo() {
 		root,
 		".axm/index.md",
 		{
-			status: "active",
+			"doc-state": "current",
 			"last-reviewed": "2026-05-15",
 			owner: "axm-core",
 			entries: [
@@ -53,7 +53,7 @@ function makeTempRepo() {
 		root,
 		".axm/universal/index.md",
 		{
-			status: "active",
+			"doc-state": "current",
 			"last-reviewed": "2026-05-15",
 			owner: "axm-core",
 			entries: [
@@ -67,7 +67,7 @@ function makeTempRepo() {
 		root,
 		".axm/universal/docs.md",
 		{
-			status: "active",
+			"doc-state": "current",
 			"last-reviewed": "2026-05-15",
 			owner: "axm-core",
 			"applies-to": ["universal"],
@@ -80,7 +80,7 @@ function makeTempRepo() {
 		root,
 		".axm/universal/devloop.md",
 		{
-			status: "draft",
+			"doc-state": "draft",
 			"last-reviewed": "2026-05-15",
 			owner: "axm-core",
 			"applies-to": ["universal"],
@@ -151,7 +151,8 @@ describe("AXM preview data model", () => {
 
 		const docs = model.documents.find((doc) => doc.path === ".axm/universal/docs.md");
 		assert.equal(docs.title, "文档规范");
-		assert.equal(docs.meta.status, "active");
+		assert.equal(docs.meta["doc-state"], "current");
+		assert.equal(docs.meta.status, undefined);
 		assert.match(docs.body, /metadata/);
 		assert.ok(docs.searchText.includes("README.md"));
 		const agents = model.documents.find((doc) => doc.path === "AGENTS.md");
@@ -192,6 +193,11 @@ describe("AXM preview data model", () => {
 			),
 		);
 		assert.ok(model.graph.nodes.some((node) => node.id === "AGENTS.md"));
+		assert.ok(model.graph.nodes.some((node) => node.id === ".axm/universal/docs.md" && node.docState === "current" && node.workflowState === null && node.displayState === "current"));
+		assert.ok(model.tree.children.some((child) => child.name === "index.md" && child.docState === "current" && child.displayState === "current"));
+		assert.equal(model.summary.byDocState.current, 4);
+		assert.equal(model.summary.byDocState.draft, 1);
+		assert.deepEqual(model.summary.byWorkflowState, {});
 		assert.ok(
 			model.graph.edges.some(
 				(edge) =>
@@ -224,7 +230,7 @@ describe("AXM preview data model", () => {
 			root,
 			".axm/index.mdc",
 			{
-				status: "active",
+				"doc-state": "current",
 				"last-reviewed": "2026-05-15",
 				owner: "axm-core",
 				entries: [
@@ -237,7 +243,7 @@ describe("AXM preview data model", () => {
 			root,
 			".axm/universal/index.mdc",
 			{
-				status: "active",
+				"doc-state": "current",
 				"last-reviewed": "2026-05-15",
 				owner: "axm-core",
 				entries: [
@@ -250,7 +256,7 @@ describe("AXM preview data model", () => {
 			root,
 			".axm/universal/docs.mdc",
 			{
-				status: "active",
+				"doc-state": "current",
 				"last-reviewed": "2026-05-15",
 				owner: "axm-core",
 				"applies-to": ["universal"],
@@ -285,6 +291,76 @@ describe("AXM preview data model", () => {
 					edge.to === ".axm/universal/docs.mdc",
 			),
 		);
+	});
+
+	test("preview model exposes doc-state and workflow-state in documents, summary, tree, and graph", () => {
+		const root = makeTempRepo();
+		writeDoc(
+			root,
+			".axm/index.md",
+			{
+				"doc-state": "current",
+				"last-reviewed": "2026-05-15",
+				owner: "axm-core",
+				entries: [
+					{ path: "universal/", title: "通用规范", "when-to-read": "跨项目通用规则" },
+					{ path: "progress/", title: "进度", "when-to-read": "进度状态" },
+				],
+			},
+			"# .axm\n\nRoot index.",
+		);
+		writeDoc(
+			root,
+			".axm/progress/index.md",
+			{
+				"doc-state": "current",
+				"last-reviewed": "2026-05-15",
+				owner: "axm-core",
+				entries: [{ path: "core/", title: "Core", "when-to-read": "Core progress" }],
+			},
+			"# progress\n\nProgress index.",
+		);
+		writeDoc(
+			root,
+			".axm/progress/core/index.md",
+			{
+				"doc-state": "current",
+				"last-reviewed": "2026-05-15",
+				owner: "axm-core",
+				entries: [{ path: "roadmap.md", title: "Roadmap", "when-to-read": "Roadmap" }],
+			},
+			"# core\n\nCore progress.",
+		);
+		writeDoc(
+			root,
+			".axm/progress/core/roadmap.md",
+			{
+				"doc-state": "current",
+				"last-reviewed": "2026-05-15",
+				owner: "axm-core",
+				"progress-type": "roadmap",
+				"workflow-state": "in-progress",
+				"state-updated": "2026-05-15",
+				initiative: "core",
+			},
+			"# Roadmap\n\nImplementation state.",
+		);
+
+		const model = buildPreviewModel(root);
+		const progressDoc = model.documents.find((doc) => doc.path === ".axm/progress/core/roadmap.md");
+		const treeProgress = model.tree.children.find((child) => child.name === "progress");
+		const treeDoc = treeProgress.children.find((child) => child.name === "core").children.find((child) => child.name === "roadmap.md");
+		const graphNode = model.graph.nodes.find((node) => node.id === ".axm/progress/core/roadmap.md");
+
+		assert.equal(progressDoc.meta.status, undefined);
+		assert.equal(treeDoc.docState, "current");
+		assert.equal(treeDoc.workflowState, "in-progress");
+		assert.equal(treeDoc.displayState, "in-progress");
+		assert.equal(graphNode.docState, "current");
+		assert.equal(graphNode.workflowState, "in-progress");
+		assert.equal(graphNode.displayState, "in-progress");
+		assert.equal(model.summary.byDocState.current, 7);
+		assert.equal(model.summary.byWorkflowState["in-progress"], 1);
 	});
 	});
 
@@ -373,7 +449,7 @@ describe("AXM preview HTTP server", () => {
 		assert.match(html, /id="projectPathInput"/);
 		assert.match(html, /axmPreview:recentProjects/);
 		assert.match(html, /fetchJson\("\/api\/target"/);
-		assert.doesNotMatch(html, /fetchJson\("\/api\/pick-target"/);
+		assert.match(html, /fetchJson\("\/api\/pick-target"/);
 		assert.doesNotMatch(html, /window\.prompt/);
 		assert.doesNotMatch(html, /<select class="project-select"/);
 		assert.match(html, /--search-results-top/);
@@ -409,11 +485,14 @@ describe("AXM preview HTTP server", () => {
 		assert.match(html, /return trimmed;/);
 		assert.doesNotMatch(html, /return escapeHtml\(trimmed\);/);
 		assert.doesNotMatch(html, /<a href="\$2">/);
-		assert.match(html, /function statusClass\(value\)/);
-		assert.match(html, /statusClass\(item\)/);
-		assert.match(html, /statusClass\(value\)/);
-		assert.match(html, /\^\[a-z0-9_-\]\+\$/i);
+		assert.match(html, /function chipClass\(value\)/);
+		assert.match(html, /key === "doc-state" \|\| key === "workflow-state" \|\| key === "state-updated"/);
+		assert.match(html, /if \(key === "state-updated"\) return "state-date"/);
+		assert.match(html, /\.chip\.current/);
+		assert.match(html, /\.chip\.open/);
+		assert.match(html, /\.chip\.accepted/);
 		assert.doesNotMatch(html, /key === "status" \? " " \+ item/);
+		assert.doesNotMatch(html, /key === "status"/);
 		assert.match(html, /function renderIssueRows\(issues, emptyTitle, emptySub\)/);
 		assert.match(html, /renderIssueRows\(allIssues/);
 		assert.match(html, /All issues/);

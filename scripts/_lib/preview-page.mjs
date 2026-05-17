@@ -463,9 +463,14 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
-.chip.active { border-color: #8ad7aa; background: #eafaf1; color: #10713d; }
-.chip.draft { border-color: #f0ce77; background: #fff7dc; color: #9a6800; }
-.chip.deprecated { border-color: #c7b4f4; background: #f4efff; color: #6740bd; }
+.chip.current, .chip.implemented, .chip.fixed, .chip.accepted, .chip.pass { border-color: #8ad7aa; background: #eafaf1; color: #10713d; }
+.chip.verified { border-color: #87d6d2; background: #e8fbfa; color: #08716d; }
+.chip.closed, .chip.unknown { border-color: #cfd8e6; background: #f6f8fb; color: #536173; }
+.chip.draft, .chip.proposed, .chip.ready, .chip.open { border-color: #a9c8ff; background: #edf5ff; color: #174ea6; }
+.chip.in-progress, .chip.warn { border-color: #f0ce77; background: #fff7dc; color: #9a6800; }
+.chip.deprecated, .chip.deferred, .chip.superseded, .chip.duplicate { border-color: #c7b4f4; background: #f4efff; color: #6740bd; }
+.chip.missing, .chip.blocked, .chip.reopened, .chip.rejected, .chip.wont-fix, .chip.error { border-color: #f0a3a8; background: #fff0f1; color: #b22230; }
+.chip.state-date { border-color: #b9d2f7; background: #f4f8ff; color: #315173; }
 .chip.linkish { color: var(--accent); border-color: #b9d2f7; background: #f4f8ff; cursor: pointer; }
 .validate-card { padding: 14px; }
 .validate-row { display: grid; grid-template-columns: 20px 1fr; gap: 11px; align-items: start; padding: 8px 0; }
@@ -651,9 +656,10 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 			<div class="graph-body">
 				<canvas id="graphCanvas"></canvas>
 				<div class="legend" id="graphLegend">
-					<div class="legend-row"><span class="legend-dot" style="background:#1d6fe8"></span><div>entries<small>索引 / 包含关系</small></div></div>
-					<div class="legend-row"><span class="legend-dot" style="background:#8055d6"></span><div>related<small>相关 / 关联关系</small></div></div>
-					<div class="legend-row"><span class="legend-dot" style="background:#22a05d"></span><div>valid<small>校验通过</small></div></div>
+					<div class="legend-row"><span class="legend-dot" style="background:#22a05d"></span><div>current<small>当前文档</small></div></div>
+					<div class="legend-row"><span class="legend-dot" style="background:#d89a0b"></span><div>in-progress<small>进行中的进展</small></div></div>
+					<div class="legend-row"><span class="legend-dot" style="background:#647184"></span><div>closed<small>已关闭 / 已完成</small></div></div>
+					<div class="legend-row"><span class="legend-dot" style="background:#d93f4b"></span><div>missing<small>缺失或阻塞</small></div></div>
 				</div>
 			</div>
 		</section>
@@ -707,6 +713,38 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		root: "#174ea6",
 		code: "#778397",
 		scope: "#22a05d"
+	};
+	var chipStates = new Set([
+		"current", "draft", "deprecated", "missing",
+		"proposed", "ready", "in-progress", "blocked", "implemented", "verified", "closed", "deferred", "superseded",
+		"open", "fixed", "reopened", "wont-fix", "duplicate", "accepted", "rejected", "unknown",
+		"pass", "warn", "error"
+	]);
+	var stateStyles = {
+		current: { color: "#22a05d", fill: "#eafaf1", stroke: "#8ad7aa", text: "#10713d" },
+		draft: { color: "#1d6fe8", fill: "#edf5ff", stroke: "#a9c8ff", text: "#174ea6" },
+		deprecated: { color: "#8055d6", fill: "#f4efff", stroke: "#c7b4f4", text: "#6740bd" },
+		missing: { color: "#d93f4b", fill: "#fff0f1", stroke: "#f0a3a8", text: "#b22230" },
+		proposed: { color: "#1d6fe8", fill: "#edf5ff", stroke: "#a9c8ff", text: "#174ea6" },
+		ready: { color: "#1d6fe8", fill: "#edf5ff", stroke: "#a9c8ff", text: "#174ea6" },
+		open: { color: "#1d6fe8", fill: "#edf5ff", stroke: "#a9c8ff", text: "#174ea6" },
+		"in-progress": { color: "#d89a0b", fill: "#fff7dc", stroke: "#f0ce77", text: "#9a6800" },
+		blocked: { color: "#d93f4b", fill: "#fff0f1", stroke: "#f0a3a8", text: "#b22230" },
+		reopened: { color: "#d93f4b", fill: "#fff0f1", stroke: "#f0a3a8", text: "#b22230" },
+		rejected: { color: "#d93f4b", fill: "#fff0f1", stroke: "#f0a3a8", text: "#b22230" },
+		"wont-fix": { color: "#d93f4b", fill: "#fff0f1", stroke: "#f0a3a8", text: "#b22230" },
+		implemented: { color: "#22a05d", fill: "#eafaf1", stroke: "#8ad7aa", text: "#10713d" },
+		verified: { color: "#0f9f9a", fill: "#e8fbfa", stroke: "#87d6d2", text: "#08716d" },
+		fixed: { color: "#16884f", fill: "#eafaf1", stroke: "#8ad7aa", text: "#0f6237" },
+		accepted: { color: "#22a05d", fill: "#eafaf1", stroke: "#8ad7aa", text: "#10713d" },
+		closed: { color: "#647184", fill: "#f6f8fb", stroke: "#cfd8e6", text: "#536173" },
+		deferred: { color: "#8055d6", fill: "#f4efff", stroke: "#c7b4f4", text: "#6740bd" },
+		superseded: { color: "#8055d6", fill: "#f4efff", stroke: "#c7b4f4", text: "#6740bd" },
+		duplicate: { color: "#8055d6", fill: "#f4efff", stroke: "#c7b4f4", text: "#6740bd" },
+		pass: { color: "#22a05d", fill: "#eafaf1", stroke: "#8ad7aa", text: "#10713d" },
+		warn: { color: "#d89a0b", fill: "#fff7dc", stroke: "#f0ce77", text: "#9a6800" },
+		error: { color: "#d93f4b", fill: "#fff0f1", stroke: "#f0a3a8", text: "#b22230" },
+		unknown: { color: "#647184", fill: "#f6f8fb", stroke: "#cfd8e6", text: "#536173" }
 	};
 
 	var els = {
@@ -895,7 +933,17 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	}
 
 	function openProject() {
-		toggleProjectDropdown();
+		setProjectBusy(true);
+		projectError = "";
+		closeProjectDropdown();
+		closePathDialog();
+		return fetchJson("/api/pick-target", { method: "POST" })
+			.then(function (data) { applyModel(data, false); })
+			.catch(function (error) {
+				if (error.error === "target_pick_cancelled") return;
+				openPathDialog(error.message);
+			})
+			.finally(function () { setProjectBusy(false); });
 	}
 
 	function toggleProjectDropdown() {
@@ -1121,7 +1169,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		var currentIssueRows = renderIssueRows(currentIssues, "No document issues", "当前文档未发现契约问题");
 		var allIssueRows = renderIssueRows(allIssues, "No project issues", "当前项目未发现契约问题");
 		var statusIcon = model.validation.errors ? "circle-alert" : model.validation.warnings ? "triangle-alert" : "check";
-		var statusClassName = model.validation.status === "pass" ? "active" : model.validation.status === "warn" ? "draft" : "deprecated";
+		var statusClassName = chipClass(model.validation.status);
 		els.meta.innerHTML = '<div class="panel"><div class="panel-title"><span>axm-meta</span><span class="chip">' + escapeHtml(doc.name) + '</span></div><table class="meta-table"><tbody>' + rows.join("") + '</tbody></table></div><div class="panel"><div class="panel-title"><span>Contract check</span><span class="panel-title-actions"><span class="chip ' + statusClassName + '">' + escapeHtml(model.validation.status.toUpperCase()) + '</span><button class="refresh-btn" id="validationRefresh" type="button" title="重新检查" aria-label="重新检查" aria-busy="false">' + iconSvg("refresh-cw", 14) + '</button></span></div><div class="validate-card"><div class="validate-row"><span class="validate-icon ' + (model.validation.errors ? "err" : model.validation.warnings ? "warn" : "") + '">' + iconSvg(statusIcon, 13) + '</span><div><div class="validate-title">' + escapeHtml(checkedLabel()) + '</div><div class="validate-sub">' + model.summary.errors + ' error(s), ' + model.summary.warnings + ' warning(s)</div></div></div><div class="validate-section-title">Current document</div>' + currentIssueRows + '<div class="validate-section-title">All issues</div>' + allIssueRows + '</div></div>';
 	}
 
@@ -1163,17 +1211,29 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 					var label = item.path || JSON.stringify(item);
 					return '<span class="chip linkish" data-ref="' + escapeHtml(label) + '">' + escapeHtml(label) + '</span>';
 				}
-				var cls = key === "status" ? statusClass(item) : "";
-				return '<span class="chip' + cls + '">' + escapeHtml(String(item)) + '</span>';
+				return renderChip(String(item), metaChipClass(key, item));
 			}).join("");
 		}
-		if (key === "status") return '<span class="chip' + statusClass(value) + '">' + escapeHtml(String(value)) + '</span>';
+		if (isMetaChipKey(key)) return renderChip(String(value), metaChipClass(key, value));
 		return escapeHtml(String(value));
 	}
 
-	function statusClass(value) {
+	function renderChip(value, className) {
+		return '<span class="chip' + (className ? " " + className : "") + '">' + escapeHtml(value) + '</span>';
+	}
+
+	function isMetaChipKey(key) {
+		return key === "doc-state" || key === "workflow-state" || key === "state-updated";
+	}
+
+	function metaChipClass(key, value) {
+		if (key === "state-updated") return "state-date";
+		return chipClass(value);
+	}
+
+	function chipClass(value) {
 		var token = String(value == null ? "" : value).trim();
-		return /^[a-z0-9_-]+$/i.test(token) ? " " + token : "";
+		return chipStates.has(token) ? token : "";
 	}
 
 	function renderMarkdown(markdown) {
@@ -1631,9 +1691,10 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 
 	function drawNode(ctx, box, active, screenWidth, screenHeight) {
 		var node = box.node;
-		var fill = active ? "#e8f1ff" : "#ffffff";
-		var stroke = active ? "#1d6fe8" : "#9eb8dd";
-		roundRect(ctx, box.x, box.y, box.w, box.h, 7, fill, stroke, active ? 2.2 : 1.2);
+		var stateStyle = graphStateStyle(node);
+		var fill = active ? "#e8f1ff" : stateStyle.fill;
+		var stroke = active ? "#1d6fe8" : stateStyle.stroke;
+		roundRect(ctx, box.x, box.y, box.w, box.h, 7, fill, stroke, active ? 2.2 : 1.4);
 		ctx.fillStyle = colors[node.kind] || colors[node.type] || colors.index;
 		ctx.beginPath();
 		ctx.arc(box.x + 16, box.y + 20, active ? 6 : 4.5, 0, Math.PI * 2);
@@ -1644,13 +1705,25 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		ctx.fillStyle = "#647184";
 		ctx.font = "11px Inter, sans-serif";
 		ctx.fillText(truncateToWidth(ctx, node.subtitle || node.path, box.w - 36), box.x + 30, box.y + 36, box.w - 36);
-		if (node.status === "active") {
-			ctx.fillStyle = "#22a05d";
-			ctx.beginPath();
-			ctx.arc(box.x + box.w - 10, box.y + 8, 5, 0, Math.PI * 2);
-			ctx.fill();
-		}
+		drawNodeStatus(ctx, box, node, stateStyle, active);
 		graphHitBoxes.push(screenBoxForGraph(box, screenWidth, screenHeight));
+	}
+
+	function graphStateStyle(node) {
+		var state = String(node.displayState || node.workflowState || node.docState || "unknown");
+		return stateStyles[state] || stateStyles.unknown;
+	}
+
+	function drawNodeStatus(ctx, box, node, style, active) {
+		var state = String(node.displayState || node.workflowState || node.docState || "unknown");
+		ctx.fillStyle = style.color;
+		ctx.beginPath();
+		ctx.arc(box.x + box.w - 10, box.y + 8, 5, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.fillStyle = style.text;
+		ctx.font = "600 9px Inter, sans-serif";
+		var label = state === "in-progress" ? "IP" : state === "wont-fix" ? "WF" : state.slice(0, 1).toUpperCase();
+		ctx.fillText(label, box.x + box.w - 13, box.y + 24);
 	}
 
 	function drawArrow(ctx, from, to, color) {

@@ -54,6 +54,7 @@ export function writeDoc(root, relPath, meta, body = "# Test\n") {
 export function renderMeta(meta) {
 	const lines = ["<!-- axm-meta"];
 	for (const [key, value] of Object.entries(meta)) {
+		if (value === undefined) continue;
 		if (Array.isArray(value)) {
 			if (value.length === 0) {
 				lines.push(`${key}: []`);
@@ -85,7 +86,7 @@ export function writeRootIndex(root, entries) {
 
 export function commonIndexMeta(entries = []) {
 	return {
-		status: "active",
+		"doc-state": "current",
 		"last-reviewed": "2026-05-15",
 		owner: "tests",
 		entries,
@@ -94,10 +95,12 @@ export function commonIndexMeta(entries = []) {
 
 export function progressMeta(extra = {}) {
 	return {
-		status: "active",
+		"doc-state": "current",
 		"last-reviewed": "2026-05-15",
 		owner: "tests",
 		"progress-type": "bug",
+		"workflow-state": "open",
+		"state-updated": "2026-05-15",
 		initiative: "foo",
 		...extra,
 	};

@@ -3,9 +3,15 @@ import path from "node:path";
 import { parseFrontmatter } from "./frontmatter.mjs";
 import { walkAxm } from "./axm-walker.mjs";
 
-const VALID_STATUS = new Set(["active", "draft", "deprecated"]);
+const VALID_DOC_STATE = new Set(["current", "draft", "deprecated"]);
 const VALID_DEPTH = new Set(["overview", "deep"]);
 const VALID_PROGRESS_TYPE = new Set(["roadmap", "spec", "decision", "bug"]);
+const WORKFLOW_STATE_BY_PROGRESS_TYPE = {
+	roadmap: new Set(["proposed", "ready", "in-progress", "blocked", "implemented", "verified", "closed", "deferred", "superseded"]),
+	spec: new Set(["proposed", "ready", "in-progress", "blocked", "implemented", "verified", "closed", "deferred", "superseded"]),
+	decision: new Set(["proposed", "accepted", "rejected", "superseded"]),
+	bug: new Set(["open", "in-progress", "fixed", "verified", "closed", "reopened", "wont-fix", "duplicate"]),
+};
 const BUG_FILE_RE = /^bug-(\d{4}-\d{2}-\d{2})-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 
 export function validateAxmProject(target = ".") {
@@ -86,8 +92,11 @@ function checkFrontmatter(file, add) {
 }
 
 function checkCommonMeta(relPath, data, add) {
-	if (!data.status) add("error", relPath, "docs.md §二", "metadata 缺少 status");
-	else if (!VALID_STATUS.has(data.status)) add("error", relPath, "docs.md §二", `status 非法：${data.status}（应为 active/draft/deprecated）`);
+	if (Object.hasOwn(data, "status")) {
+		add("error", relPath, "docs.md §二", "legacy status field is not supported; use doc-state");
+	}
+	if (!data["doc-state"]) add("error", relPath, "docs.md §二", "metadata 缺少 doc-state");
+	else if (!VALID_DOC_STATE.has(data["doc-state"])) add("error", relPath, "docs.md §二", `doc-state 非法：${data["doc-state"]}（应为 current/draft/deprecated）`);
 	if (!data["last-reviewed"]) add("error", relPath, "docs.md §二", "metadata 缺少 last-reviewed");
 	else if (!isDate(data["last-reviewed"])) add("error", relPath, "docs.md §三.4", `last-reviewed 日期格式非法：${data["last-reviewed"]}（应为 YYYY-MM-DD）`);
 	if (!data.owner) add("error", relPath, "docs.md §二", "metadata 缺少 owner");
@@ -131,6 +140,32 @@ function checkProgressMeta(relPath, data, add) {
 		add("error", relPath, "docs.md §二.D", `progress-type 非法：${data["progress-type"]}（应为 roadmap/spec/decision/bug）`);
 	}
 	if (!data.initiative) add("error", relPath, "docs.md §二.D", "进度文档缺少 initiative");
+	if (!data["workflow-state"]) add("error", relPath, "docs.md §二.D", "进度文档缺少 workflow-state");
+	if (!data["state-updated"]) add("error", relPath, "docs.md §二.D", "进度文档缺少 state-updated");
+	else if (!isStrictDate(data["state-updated"])) add("error", relPath, "docs.md §二.D", `state-updated 日期格式非法：${data["state-updated"]}（应为严格 YYYY-MM-DD）`);
+	checkWorkflowState(relPath, data, workflowTypeForProgressDoc(relPath, data), add);
+}
+
+function workflowTypeForProgressDoc(relPath, data) {
+	const info = bugPathInfo(relPath);
+	if (info?.kind === "initiative-bug") {
+		if (info.name === "log.md") return "roadmap";
+		if (!isIndexDocName(info.name)) return "bug";
+	}
+	return data["progress-type"];
+}
+
+function checkWorkflowState(relPath, data, progressType, add) {
+	if (!data["workflow-state"] || !VALID_PROGRESS_TYPE.has(progressType)) return;
+	const validStates = WORKFLOW_STATE_BY_PROGRESS_TYPE[progressType];
+	if (!validStates.has(data["workflow-state"])) {
+		add(
+			"error",
+			relPath,
+			"docs.md §二.D",
+			`workflow-state 非法：${data["workflow-state"]}（progress-type: ${progressType} 应为 ${Array.from(validStates).join("/")})`,
+		);
+	}
 }
 
 function checkIndexSync(files, repoRoot, add) {

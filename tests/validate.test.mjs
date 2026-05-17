@@ -34,9 +34,86 @@ describe("validate CLI", () => {
 
 		const validate = runNode("scripts/validate.mjs", [`--target=${root}`]);
 		assertExit(validate, 0, "validate");
+		assert.doesNotMatch(combinedOutput(validate), /metadata 缺少 doc-state/);
+		for (const file of fs.readdirSync(path.join(root, ".axm"), { recursive: true })) {
+			if (!String(file).endsWith(".md")) continue;
+			const raw = fs.readFileSync(path.join(root, ".axm", file), "utf8");
+			assert.match(raw, /doc-state: (current|draft|deprecated)/, `${file} should use doc-state`);
+			assert.doesNotMatch(raw, /^status:/m, `${file} should not use legacy status`);
+		}
 
 		const reindex = runNode("scripts/reindex.mjs", [`--target=${root}`, "--dry-run"]);
 		assertExit(reindex, 0, "reindex --dry-run");
+	});
+
+	test("legacy status metadata returns ERROR", () => {
+		const root = makeTempRepo("axm-legacy-status-");
+		writeDoc(root, ".axm/index.md", {
+			status: "active",
+			"last-reviewed": "2026-05-15",
+			owner: "tests",
+			entries: [{ path: "project/", title: "Project", "when-to-read": "Project docs" }],
+		});
+		writeDoc(root, ".axm/project/index.md", {
+			status: "active",
+			"last-reviewed": "2026-05-15",
+			owner: "tests",
+			entries: [{ path: "spec.md", title: "Spec", "when-to-read": "Spec docs" }],
+		});
+		writeDoc(root, ".axm/project/spec.md", {
+			status: "active",
+			"last-reviewed": "2026-05-15",
+			owner: "tests",
+			"applies-to": ["project:smoke"],
+		});
+
+		const result = runNode("scripts/validate.mjs", [`--target=${root}`]);
+		const output = combinedOutput(result);
+
+		assertExit(result, 1, "validate");
+		assert.match(output, /status/);
+		assert.match(output, /doc-state/);
+	});
+
+	test("progress docs require workflow-state and state-updated", () => {
+		const root = makeProgressBugRepo();
+		writeDoc(root, ".axm/progress/foo/bugs/index.md", commonIndexMeta([
+			{ path: "bug-2026-05-15-no-workflow.md", title: "Missing workflow", "when-to-read": "Invalid bug" },
+			{ path: "bug-2026-05-15-no-updated.md", title: "Missing update date", "when-to-read": "Invalid bug" },
+		]));
+		writeDoc(root, ".axm/progress/foo/bugs/bug-2026-05-15-no-workflow.md", progressMeta({ "workflow-state": undefined }));
+		writeDoc(root, ".axm/progress/foo/bugs/bug-2026-05-15-no-updated.md", progressMeta({ "state-updated": undefined }));
+
+		const result = runNode("scripts/validate.mjs", [`--target=${root}`]);
+		const output = combinedOutput(result);
+
+		assertExit(result, 1, "validate");
+		assert.match(output, /workflow-state/);
+		assert.match(output, /state-updated/);
+	});
+
+	test("workflow-state is validated by progress-type", () => {
+		const root = makeProgressBugRepo();
+		writeDoc(root, ".axm/progress/foo/index.md", commonIndexMeta([
+			{ path: "roadmap.md", title: "Roadmap", "when-to-read": "Roadmap" },
+			{ path: "decision.md", title: "Decision", "when-to-read": "Decision" },
+			{ path: "bugs/", title: "Bugs", "when-to-read": "Bug board" },
+		]));
+		writeDoc(root, ".axm/progress/foo/roadmap.md", progressMeta({ "progress-type": "roadmap", "workflow-state": "accepted" }));
+		writeDoc(root, ".axm/progress/foo/decision.md", progressMeta({ "progress-type": "decision", "workflow-state": "fixed" }));
+		writeDoc(root, ".axm/progress/foo/bugs/index.md", commonIndexMeta([
+			{ path: "bug-2026-05-15-invalid-state.md", title: "Invalid bug state", "when-to-read": "Invalid bug" },
+		]));
+		writeDoc(root, ".axm/progress/foo/bugs/bug-2026-05-15-invalid-state.md", progressMeta({ "workflow-state": "accepted" }));
+
+		const result = runNode("scripts/validate.mjs", [`--target=${root}`]);
+		const output = combinedOutput(result);
+
+		assertExit(result, 1, "validate");
+		assert.match(output, /workflow-state/);
+		assert.match(output, /roadmap/);
+		assert.match(output, /decision/);
+		assert.match(output, /bug/);
 	});
 
 	test("top-level progress/bugs docs return ERROR", () => {
@@ -187,7 +264,7 @@ describe("validate CLI", () => {
 	test("bugs/log.md with progress-type roadmap remains valid", () => {
 		const root = makeProgressBugRepo();
 		writeDoc(root, ".axm/progress/foo/bugs/index.md", commonIndexMeta([{ path: "log.md", title: "Bug log", "when-to-read": "Review bug board" }]));
-		writeDoc(root, ".axm/progress/foo/bugs/log.md", progressMeta({ "progress-type": "roadmap", initiative: "foo" }));
+		writeDoc(root, ".axm/progress/foo/bugs/log.md", progressMeta({ "progress-type": "roadmap", "workflow-state": "proposed", initiative: "foo" }));
 
 		const result = runNode("scripts/validate.mjs", [`--target=${root}`]);
 
@@ -232,7 +309,7 @@ describe("validate CLI", () => {
 			{ path: "b.md", title: "B", "when-to-read": "B" },
 		]));
 		const meta = {
-			status: "active",
+			"doc-state": "current",
 			"last-reviewed": "2026-05-15",
 			"applies-to": ["project:smoke"],
 		};
@@ -260,7 +337,7 @@ describe("validate CLI", () => {
 		writeDoc(root, ".axm/project/index.md", commonIndexMeta(entries));
 		for (const entry of entries) {
 			writeDoc(root, `.axm/project/${entry.path}`, {
-				status: "active",
+				"doc-state": "current",
 				"last-reviewed": "2026-05-15",
 				"applies-to": ["project:smoke"],
 			});
@@ -281,7 +358,7 @@ describe("validate CLI", () => {
 		writeDoc(root, ".axm/knowledge/index.md", commonIndexMeta([{ path: "system/", title: "System", "when-to-read": "System docs" }]));
 		writeDoc(root, ".axm/knowledge/system/index.md", commonIndexMeta([{ path: "overview.md", title: "Overview", "when-to-read": "System overview" }]));
 		writeDoc(root, ".axm/knowledge/system/overview.md", {
-			status: "active",
+			"doc-state": "current",
 			"last-reviewed": "2026-05-15",
 			owner: "tests",
 			depth: "overview",
@@ -304,7 +381,7 @@ describe("validate CLI", () => {
 		writeRootIndex(root, [{ path: "project/", title: "Project", "when-to-read": "Project docs" }]);
 		writeDoc(root, ".axm/project/index.md", commonIndexMeta([]));
 		writeDoc(root, ".axm/project/orphan.md", {
-			status: "active",
+			"doc-state": "current",
 			"last-reviewed": "2026-05-15",
 			owner: "tests",
 			"applies-to": ["project:smoke"],
@@ -323,12 +400,12 @@ describe("validate CLI", () => {
 		const root = makeTempRepo("axm-preview-malformed-index-");
 		writeRootIndex(root, [{ path: "project/", title: "Project", "when-to-read": "Project docs" }]);
 		writeDoc(root, ".axm/project/index.md", {
-			status: "active",
+			"doc-state": "current",
 			"last-reviewed": "2026-05-15",
 			owner: "tests",
 		});
 		writeDoc(root, ".axm/project/orphan.md", {
-			status: "active",
+			"doc-state": "current",
 			"last-reviewed": "2026-05-15",
 			owner: "tests",
 			"applies-to": ["project:smoke"],
@@ -351,7 +428,7 @@ describe("validate CLI", () => {
 		writeRootIndex(root, [{ path: ".axm/universal/docs.md", title: "Docs", "when-to-read": "Invalid non-direct entry" }]);
 		writeDoc(root, ".axm/universal/index.md", commonIndexMeta([{ path: "docs.md", title: "Docs", "when-to-read": "Docs" }]));
 		writeDoc(root, ".axm/universal/docs.md", {
-			status: "active",
+			"doc-state": "current",
 			"last-reviewed": "2026-05-15",
 			owner: "tests",
 			"applies-to": ["universal"],

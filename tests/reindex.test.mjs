@@ -23,7 +23,7 @@ describe("reindex CLI", () => {
 		writeRootIndex(root, [{ path: "project/", title: "Project", "when-to-read": "Project docs" }]);
 		writeDoc(root, ".axm/project/index.md", commonIndexMeta([]));
 		writeDoc(root, ".axm/project/architecture.md", {
-			status: "active",
+			"doc-state": "current",
 			"last-reviewed": "2026-05-15",
 			owner: "tests",
 			"applies-to": ["project:smoke"],
