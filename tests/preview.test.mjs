@@ -7,7 +7,12 @@ import { afterEach, describe, test } from "node:test";
 import { buildPreviewModel } from "../scripts/_lib/preview-data.mjs";
 import { buildPreviewHtml } from "../scripts/_lib/preview-page.mjs";
 import { validateAxmProject } from "../scripts/_lib/validation.mjs";
-import { createPreviewServer } from "../scripts/preview.mjs";
+import {
+	createPreviewServer,
+	readLastPreviewTarget,
+	resolveStartupTarget,
+	saveLastPreviewTarget,
+} from "../scripts/preview.mjs";
 
 const tempRoots = [];
 
@@ -392,7 +397,13 @@ describe("AXM preview HTTP server", () => {
 		tempRoots.push(invalidRoot);
 		const firstRoot = makeTempRepo();
 		const secondRoot = makeTempRepo();
-		const server = createPreviewServer({ target: invalidRoot });
+		const targetChanges = [];
+		const server = createPreviewServer({
+			target: invalidRoot,
+			onTargetChange(target) {
+				targetChanges.push(target.path);
+			},
+		});
 		await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 		const { port } = server.address();
 		const base = `http://127.0.0.1:${port}`;
@@ -419,6 +430,7 @@ describe("AXM preview HTTP server", () => {
 
 			const current = await fetch(`${base}/api/model`).then((res) => res.json());
 			assert.equal(current.target.path, secondRoot);
+			assert.deepEqual(targetChanges, [firstRoot, secondRoot]);
 
 			const invalid = await fetch(`${base}/api/target`, {
 				method: "POST",
@@ -429,6 +441,24 @@ describe("AXM preview HTTP server", () => {
 			assert.equal((await invalid.json()).error, "target_missing_axm");
 		} finally {
 			await new Promise((resolve) => server.close(resolve));
+		}
+	});
+
+	test("preview CLI startup target uses the persisted recent project unless --target is explicit", () => {
+		const root = makeTempRepo();
+		const stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), "axm-preview-state-"));
+		tempRoots.push(stateRoot);
+		const previousStatePath = process.env.AXM_PREVIEW_STATE_PATH;
+		process.env.AXM_PREVIEW_STATE_PATH = path.join(stateRoot, "preview.json");
+		try {
+			assert.equal(readLastPreviewTarget(), null);
+			assert.equal(saveLastPreviewTarget({ path: root }), true);
+			assert.equal(readLastPreviewTarget(), root);
+			assert.equal(resolveStartupTarget({ target: ".", targetProvided: false }), root);
+			assert.equal(resolveStartupTarget({ target: ".", targetProvided: true }), ".");
+		} finally {
+			if (previousStatePath === undefined) delete process.env.AXM_PREVIEW_STATE_PATH;
+			else process.env.AXM_PREVIEW_STATE_PATH = previousStatePath;
 		}
 	});
 
@@ -513,6 +543,16 @@ describe("AXM preview HTTP server", () => {
 		assert.doesNotMatch(html, /\b(save|delete|edit|upload|write|run command)\b/i);
 	});
 
+	test("preview restores the most recent project when restarted without an active target", () => {
+		const html = buildPreviewHtml();
+
+		assert.match(html, /function restoreRecentTarget\(originalError\)/);
+		assert.match(html, /if \(initial && recentProjects\.length\) return restoreRecentTarget\(error\)/);
+		assert.match(html, /fetchJson\("\/api\/target", \{/);
+		assert.match(html, /body: JSON\.stringify\(\{ path: recentProjects\[0\]\.path \}\)/);
+		assert.match(html, /applyModel\(data, true\)/);
+	});
+
 	test("preview chrome uses Axiom branding, lucide icons, and drawer graph controls", () => {
 		const html = buildPreviewHtml();
 
@@ -550,6 +590,55 @@ describe("AXM preview HTTP server", () => {
 		assert.doesNotMatch(html, />[↻⌁»⌄−+▱▤◈◧▣]<\//);
 	});
 
+	test("preview graph defaults to a readable overview with focus and all modes", () => {
+		const html = buildPreviewHtml();
+
+		assert.match(html, /graphMode = "overview"/);
+		assert.match(html, /id="graphModeOverview"/);
+		assert.match(html, /id="graphModeFocus"/);
+		assert.match(html, /id="graphModeAll"/);
+		assert.match(html, /function setGraphMode/);
+		assert.match(html, /function visibleGraph/);
+		assert.match(html, /function addOverviewGraphNodes/);
+		assert.match(html, /function addFocusedGraphNodes/);
+	});
+
+	test("preview graph relation toggles hide noisy code and scope edges by default", () => {
+		const html = buildPreviewHtml();
+
+		assert.match(html, /"code-ref": false/);
+		assert.match(html, /"applies-to": false/);
+		assert.match(html, /data-edge-type="entries"/);
+		assert.match(html, /data-edge-type="related"/);
+		assert.match(html, /data-edge-type="code-ref"/);
+		assert.match(html, /data-edge-type="applies-to"/);
+		assert.match(html, /function toggleGraphEdgeType/);
+		assert.match(html, /function shouldShowGraphEdge/);
+		assert.match(html, /var graph = visibleGraph\(\)/);
+		assert.match(html, /layoutGraph\(graph\.nodes, graph\.edges/);
+		assert.doesNotMatch(html, /layoutGraph\(model\.graph\.nodes, model\.graph\.edges/);
+	});
+
+	test("preview graph nodes use roomier cards and hover previews", () => {
+		const html = buildPreviewHtml();
+
+		assert.match(html, /id="graphPreview"/);
+		assert.match(html, /\.graph-preview/);
+		assert.match(html, /function nodeSizeForGraph/);
+		assert.match(html, /function showGraphPreview/);
+		assert.match(html, /function hideGraphPreview/);
+		assert.match(html, /function graphPreviewExcerpt/);
+		assert.match(html, /data-open-path/);
+		assert.match(html, /Open in viewer/);
+		assert.match(html, /addEventListener\("pointermove"/);
+		assert.match(html, /graphHoveredId/);
+		assert.match(html, /positionGraphPreview\(box\)/);
+		assert.match(html, /graphHoveredId === box\.id\) return/);
+		assert.match(html, /selectDoc\(button\.dataset\.openPath\);\n\t\tcollapseGraph\(\);\n\t\thideGraphPreview\(\);/);
+		assert.doesNotMatch(html, /positionGraphPreview\(event\)/);
+		assert.doesNotMatch(html, /ctx\.fillText\(label, box\.x \+ box\.w - 13/);
+	});
+
 	test("preview file tree is a compact VS Code style collapsible outline", () => {
 		const html = buildPreviewHtml();
 
@@ -577,5 +666,17 @@ describe("AXM preview HTTP server", () => {
 		assert.doesNotMatch(html, /\.tree-row\.active \{[^}]*box-shadow:[^}]*\}/);
 		assert.doesNotMatch(html, /tree-disclosure empty/);
 		assert.doesNotMatch(html, /tree-subtitle/);
+	});
+
+	test("preview file tree remembers collapsed folders per target", () => {
+		const html = buildPreviewHtml();
+
+		assert.match(html, /function treeStorageKey/);
+		assert.match(html, /function loadTreeCollapsed/);
+		assert.match(html, /function saveTreeCollapsed/);
+		assert.match(html, /currentTarget && currentTarget\.path/);
+		assert.match(html, /axmPreview:treeCollapsed:/);
+		assert.match(html, /treeCollapsed = loadTreeCollapsed\(\)/);
+		assert.match(html, /saveTreeCollapsed\(\)/);
 	});
 });

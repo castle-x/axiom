@@ -514,6 +514,39 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 }
 .graph-head strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; }
 .graph-meta { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12px; }
+.graph-controls {
+	min-width: 0;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+.graph-controls::-webkit-scrollbar { display: none; }
+.graph-segment, .graph-filters {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 3px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: #fff;
+	flex: 0 0 auto;
+}
+.graph-segment button, .graph-filters button {
+	height: 26px;
+	padding: 0 9px;
+	border-radius: 6px;
+	color: #566274;
+	font-size: 12px;
+	font-weight: 650;
+	white-space: nowrap;
+}
+.graph-segment button[aria-pressed="true"], .graph-filters button[aria-pressed="true"] {
+	background: var(--accent-soft);
+	color: #174ea6;
+}
+.graph-filters button[aria-pressed="false"] { color: #9aa6b5; background: #f6f8fb; }
 .graph-tools {
 	margin-left: auto;
 	display: inline-flex;
@@ -567,6 +600,37 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 .legend-row div { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .legend-dot { width: 10px; height: 10px; border-radius: 999px; margin-top: 4px; }
 .legend-row small { display: block; color: var(--muted); margin-top: 3px; line-height: 1.35; }
+.graph-preview {
+	position: absolute;
+	left: var(--graph-preview-left, 16px);
+	top: var(--graph-preview-top, 16px);
+	width: min(360px, calc(100% - 32px));
+	max-height: min(300px, calc(100% - 32px));
+	display: none;
+	overflow: auto;
+	padding: 12px 14px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: rgba(255,255,255,.94);
+	box-shadow: var(--shadow);
+	z-index: 3;
+	color: #243044;
+}
+.graph-preview.open { display: block; }
+.graph-preview-title { font-size: 13px; font-weight: 740; color: #162033; line-height: 1.35; }
+.graph-preview-path { margin-top: 3px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.graph-preview-text { margin-top: 9px; color: #465365; font-size: 12px; line-height: 1.55; }
+.graph-preview-actions { display: flex; justify-content: flex-end; margin-top: 11px; }
+.graph-preview-open {
+	height: 28px;
+	padding: 0 10px;
+	border-radius: 6px;
+	background: var(--accent);
+	color: #fff;
+	font-size: 12px;
+	font-weight: 680;
+}
+.graph-preview-open:hover { background: #174ea6; }
 .search-results {
 	position: fixed;
 	top: var(--search-results-top, 52px);
@@ -595,6 +659,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	.topbar { grid-template-columns: 220px minmax(170px, 240px) minmax(220px, 1fr); }
 	.stats { display: none; }
 	.shell { grid-template-columns: 240px minmax(0, 1fr); }
+	.graph-filters { display: none; }
 	.legend { top: auto; bottom: 24px; }
 }
 </style>
@@ -647,6 +712,19 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 			<div class="graph-head">
 				<strong>Knowledge Graph</strong>
 				<span class="graph-meta" id="graphMeta">0 nodes · 0 edges</span>
+				<div class="graph-controls">
+					<div class="graph-segment" role="group" aria-label="Graph mode">
+						<button id="graphModeOverview" type="button" data-graph-mode="overview" aria-pressed="true">Overview</button>
+						<button id="graphModeFocus" type="button" data-graph-mode="focus" aria-pressed="false">Focus</button>
+						<button id="graphModeAll" type="button" data-graph-mode="all" aria-pressed="false">All</button>
+					</div>
+					<div class="graph-filters" role="group" aria-label="Graph relations">
+						<button type="button" data-edge-type="entries" aria-pressed="true">entries</button>
+						<button type="button" data-edge-type="related" aria-pressed="true">related</button>
+						<button type="button" data-edge-type="code-ref" aria-pressed="false">code</button>
+						<button type="button" data-edge-type="applies-to" aria-pressed="false">scope</button>
+					</div>
+				</div>
 				<div class="graph-tools">
 					<button class="icon-btn" id="legendToggle" aria-label="隐藏图例" aria-pressed="true">${icon("list", 18)}</button>
 					<button class="icon-btn" id="fitGraph" aria-label="适配视图">${icon("scan", 18)}</button>
@@ -663,6 +741,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 					<div class="legend-row"><span class="legend-dot" style="background:#647184"></span><div>closed<small>已关闭 / 已完成</small></div></div>
 					<div class="legend-row"><span class="legend-dot" style="background:#d93f4b"></span><div>missing<small>缺失或阻塞</small></div></div>
 				</div>
+				<div class="graph-preview" id="graphPreview" role="dialog" aria-hidden="true"></div>
 			</div>
 		</section>
 	</div>
@@ -694,6 +773,10 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	var graphDrag = { active: false, moved: false, lastX: 0, lastY: 0 };
 	var graphHitBoxes = [];
 	var graphDrawFrame = 0;
+	var graphMode = "overview";
+	var graphEdgeTypes = { entries: true, related: true, "code-ref": false, "applies-to": false };
+	var graphHoveredId = null;
+	var graphPreviewHideTimer = 0;
 	var treeCollapsed = new Set();
 	var refreshing = false;
 	var currentTarget = null;
@@ -748,6 +831,8 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		error: { color: "#d93f4b", fill: "#fff0f1", stroke: "#f0a3a8", text: "#b22230" },
 		unknown: { color: "#647184", fill: "#f6f8fb", stroke: "#cfd8e6", text: "#536173" }
 	};
+	graphMode = loadGraphMode();
+	graphEdgeTypes = loadGraphEdgeTypes();
 
 	var els = {
 		docCount: document.getElementById("docCount"),
@@ -776,7 +861,10 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		graphMeta: document.getElementById("graphMeta"),
 		graphSection: document.getElementById("graphSection"),
 		graphToggle: document.getElementById("graphToggle"),
+		graphModeButtons: document.querySelectorAll("[data-graph-mode]"),
+		graphEdgeButtons: document.querySelectorAll("[data-edge-type]"),
 		graphLegend: document.getElementById("graphLegend"),
+		graphPreview: document.getElementById("graphPreview"),
 		legendToggle: document.getElementById("legendToggle")
 	};
 
@@ -790,6 +878,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		return fetchJson("/api/model", { cache: "no-store" })
 			.then(function (data) { applyModel(data, initial); })
 			.catch(function (error) {
+				if (initial && recentProjects.length) return restoreRecentTarget(error);
 				currentTarget = null;
 				renderProjectPicker();
 				renderNoTarget(error.message);
@@ -805,6 +894,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		currentTarget = data.target || null;
 		rememberTarget(currentTarget);
 		renderProjectPicker();
+		treeCollapsed = loadTreeCollapsed();
 		if (initial) {
 			var storedPath = localStorage.getItem("axmPreview:selectedPath");
 			selectedPath = findDoc(storedPath) ? storedPath : defaultDocPath();
@@ -827,6 +917,28 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		});
 	}
 
+	function restoreRecentTarget(originalError) {
+		if (!recentProjects[0] || !recentProjects[0].path) {
+			currentTarget = null;
+			renderProjectPicker();
+			renderNoTarget(originalError.message);
+			return Promise.resolve();
+		}
+		projectError = "";
+		return fetchJson("/api/target", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ path: recentProjects[0].path })
+		})
+			.then(function (data) { applyModel(data, true); })
+			.catch(function (error) {
+				currentTarget = null;
+				projectError = error.message || originalError.message;
+				renderProjectPicker();
+				renderNoTarget(projectError);
+			});
+	}
+
 	function renderNoTarget(message) {
 		model = null;
 		selectedPath = null;
@@ -841,6 +953,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		els.markdown.innerHTML = '<div class="empty">' + escapeHtml(message || "Open a project folder that contains .axm.") + "</div>";
 		els.meta.innerHTML = '<div class="panel"><div class="panel-title"><span>Project</span></div><div class="validate-card"><div class="validate-row"><span class="validate-icon warn">' + iconSvg("folder", 13) + '</span><div><div class="validate-title">Open an Axiom project</div><div class="validate-sub">Choose a project folder that contains .axm, or switch to a recent project.</div></div></div></div></div>';
 		graphHitBoxes = [];
+		hideGraphPreview();
 	}
 
 	function renderProjectPicker() {
@@ -892,6 +1005,54 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		} catch {
 			return [];
 		}
+	}
+
+	function loadGraphMode() {
+		try {
+			var stored = localStorage.getItem("axmPreview:graphMode");
+			return stored === "focus" || stored === "all" || stored === "overview" ? stored : "overview";
+		} catch {
+			return "overview";
+		}
+	}
+
+	function loadGraphEdgeTypes() {
+		var defaults = { entries: true, related: true, "code-ref": false, "applies-to": false };
+		try {
+			var parsed = JSON.parse(localStorage.getItem("axmPreview:graphEdgeTypes") || "{}");
+			if (!parsed || typeof parsed !== "object") return defaults;
+			Object.keys(defaults).forEach(function (type) {
+				if (typeof parsed[type] === "boolean") defaults[type] = parsed[type];
+			});
+		} catch {}
+		return defaults;
+	}
+
+	function saveGraphEdgeTypes() {
+		try {
+			localStorage.setItem("axmPreview:graphEdgeTypes", JSON.stringify(graphEdgeTypes));
+		} catch {}
+	}
+
+	function treeStorageKey() {
+		var targetPath = currentTarget && currentTarget.path ? currentTarget.path : "default";
+		return "axmPreview:treeCollapsed:" + targetPath;
+	}
+
+	function loadTreeCollapsed() {
+		try {
+			var parsed = JSON.parse(localStorage.getItem(treeStorageKey()) || "[]");
+			if (!Array.isArray(parsed)) return new Set();
+			return new Set(parsed.filter(function (item) { return typeof item === "string"; }));
+		} catch {
+			return new Set();
+		}
+	}
+
+	function saveTreeCollapsed() {
+		try {
+			localStorage.setItem(treeStorageKey(), JSON.stringify(Array.from(treeCollapsed)));
+		} catch {}
 	}
 
 	function rememberTarget(target) {
@@ -1042,10 +1203,50 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		els.errorCount.textContent = model.summary.errors + " errors";
 		els.warningCount.textContent = model.summary.warnings + " warnings";
 		els.sideDocCount.textContent = model.summary.docs + " docs";
-		els.graphMeta.textContent = model.graph.nodes.length + " nodes · " + model.graph.edges.length + " edges";
+		updateGraphControls();
+		updateGraphMeta();
 		renderTree();
 		renderSelected();
 		scheduleGraphDraw();
+	}
+
+	function updateGraphMeta() {
+		if (!model) {
+			els.graphMeta.textContent = "0 nodes · 0 edges";
+			return;
+		}
+		var graph = visibleGraph();
+		var modeLabel = graphMode.slice(0, 1).toUpperCase() + graphMode.slice(1);
+		els.graphMeta.textContent = modeLabel + " · " + graph.nodes.length + "/" + model.graph.nodes.length + " nodes · " + graph.edges.length + "/" + model.graph.edges.length + " edges";
+	}
+
+	function updateGraphControls() {
+		Array.prototype.forEach.call(els.graphModeButtons, function (button) {
+			button.setAttribute("aria-pressed", button.dataset.graphMode === graphMode ? "true" : "false");
+		});
+		Array.prototype.forEach.call(els.graphEdgeButtons, function (button) {
+			button.setAttribute("aria-pressed", graphEdgeTypes[button.dataset.edgeType] ? "true" : "false");
+		});
+	}
+
+	function setGraphMode(mode) {
+		if (mode !== "overview" && mode !== "focus" && mode !== "all") return;
+		graphMode = mode;
+		try {
+			localStorage.setItem("axmPreview:graphMode", graphMode);
+		} catch {}
+		updateGraphControls();
+		updateGraphMeta();
+		resetGraphView();
+	}
+
+	function toggleGraphEdgeType(type) {
+		if (!Object.prototype.hasOwnProperty.call(graphEdgeTypes, type)) return;
+		graphEdgeTypes[type] = !graphEdgeTypes[type];
+		saveGraphEdgeTypes();
+		updateGraphControls();
+		updateGraphMeta();
+		resetGraphView();
 	}
 
 	function defaultDocPath() {
@@ -1112,6 +1313,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	function toggleTreeNode(path) {
 		if (treeCollapsed.has(path)) uncollapseTreeNode(path);
 		else treeCollapsed.add(path);
+		saveTreeCollapsed();
 		renderTree();
 	}
 
@@ -1124,10 +1326,12 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	}
 
 	function revealPath(path) {
+		var beforeSize = treeCollapsed.size;
 		var parts = path.split("/");
 		for (var i = 1; i < parts.length - 1; i++) {
 			uncollapseTreeNode(parts.slice(0, i + 1).join("/"));
 		}
+		if (treeCollapsed.size !== beforeSize) saveTreeCollapsed();
 	}
 
 	function selectDoc(path) {
@@ -1137,6 +1341,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		revealPath(path);
 		renderTree();
 		renderSelected();
+		updateGraphMeta();
 		scheduleGraphDraw();
 	}
 
@@ -1439,6 +1644,12 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	els.graphToggle.addEventListener("click", toggleGraph);
 	els.graphSection.addEventListener("transitionend", scheduleGraphDraw);
 	els.legendToggle.addEventListener("click", toggleLegend);
+	Array.prototype.forEach.call(els.graphModeButtons, function (button) {
+		button.addEventListener("click", function () { setGraphMode(button.dataset.graphMode); });
+	});
+	Array.prototype.forEach.call(els.graphEdgeButtons, function (button) {
+		button.addEventListener("click", function () { toggleGraphEdgeType(button.dataset.edgeType); });
+	});
 	document.getElementById("zoomIn").addEventListener("click", function () { zoomGraphBy(1.14); });
 	document.getElementById("zoomOut").addEventListener("click", function () { zoomGraphBy(1 / 1.14); });
 	document.getElementById("fitGraph").addEventListener("click", resetGraphView);
@@ -1468,9 +1679,13 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		graphDrag.lastY = event.clientY;
 		if (els.canvas.setPointerCapture) els.canvas.setPointerCapture(event.pointerId);
 		document.querySelector(".graph-body").classList.add("dragging");
+		hideGraphPreview();
 	});
 	els.canvas.addEventListener("pointermove", function (event) {
-		if (!graphDrag.active) return;
+		if (!graphDrag.active) {
+			updateGraphPreviewFromPointer(event);
+			return;
+		}
 		var dx = event.clientX - graphDrag.lastX;
 		var dy = event.clientY - graphDrag.lastY;
 		graphDrag.lastX = event.clientX;
@@ -1481,6 +1696,16 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	});
 	els.canvas.addEventListener("pointerup", endGraphDrag);
 	els.canvas.addEventListener("pointercancel", endGraphDrag);
+	els.canvas.addEventListener("pointerleave", scheduleHideGraphPreview);
+	els.graphPreview.addEventListener("mouseenter", cancelHideGraphPreview);
+	els.graphPreview.addEventListener("mouseleave", scheduleHideGraphPreview);
+	els.graphPreview.addEventListener("click", function (event) {
+		var button = event.target.closest ? event.target.closest("[data-open-path]") : null;
+		if (!button) return;
+		selectDoc(button.dataset.openPath);
+		collapseGraph();
+		hideGraphPreview();
+	});
 
 	els.canvas.addEventListener("click", function (event) {
 		if (graphDrag.moved) {
@@ -1494,6 +1719,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 			var box = graphHitBoxes[i];
 			if (x >= box.x && x <= box.x + box.w && y >= box.y && y <= box.y + box.h && findDoc(box.id)) {
 				selectDoc(box.id);
+				hideGraphPreview();
 				break;
 			}
 		}
@@ -1511,6 +1737,82 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 			els.canvas.releasePointerCapture(event.pointerId);
 		}
 		document.querySelector(".graph-body").classList.remove("dragging");
+	}
+
+	function updateGraphPreviewFromPointer(event) {
+		if (!els.graphSection.classList.contains("fullscreen")) return;
+		var rect = els.canvas.getBoundingClientRect();
+		var x = event.clientX - rect.left;
+		var y = event.clientY - rect.top;
+		var box = graphBoxAt(x, y);
+		els.canvas.style.cursor = box ? "pointer" : "grab";
+		if (!box) {
+			scheduleHideGraphPreview();
+			return;
+		}
+		cancelHideGraphPreview();
+		showGraphPreview(box);
+	}
+
+	function graphBoxAt(x, y) {
+		for (var i = graphHitBoxes.length - 1; i >= 0; i--) {
+			var box = graphHitBoxes[i];
+			if (x >= box.x && x <= box.x + box.w && y >= box.y && y <= box.y + box.h) return box;
+		}
+		return null;
+	}
+
+	function showGraphPreview(box) {
+		if (!box) return;
+		if (graphHoveredId === box.id) return;
+		graphHoveredId = box.id;
+		var node = box.node || {};
+		var doc = findDoc(box.id);
+		var title = doc ? doc.title : node.title || node.label || box.id;
+		var path = doc ? doc.path : node.path || box.id;
+		var state = node.displayState || node.workflowState || node.docState || "reference";
+		var text = doc ? graphPreviewExcerpt(doc.body || doc.subtitle || "") : graphPreviewExcerpt(node.subtitle || node.title || node.path || "");
+		els.graphPreview.innerHTML =
+			'<div class="graph-preview-title">' + escapeHtml(title) + '</div>' +
+			'<div class="graph-preview-path">' + escapeHtml(path) + " · " + escapeHtml(state) + '</div>' +
+			'<div class="graph-preview-text">' + escapeHtml(text || "No preview text available.") + '</div>' +
+			(doc ? '<div class="graph-preview-actions"><button class="graph-preview-open" type="button" data-open-path="' + escapeHtml(doc.path) + '">Open in viewer</button></div>' : "");
+		els.graphPreview.classList.add("open");
+		els.graphPreview.setAttribute("aria-hidden", "false");
+		positionGraphPreview(box);
+	}
+
+	function positionGraphPreview(box) {
+		if (!box || !els.graphPreview.classList.contains("open")) return;
+		var body = document.querySelector(".graph-body").getBoundingClientRect();
+		var preview = els.graphPreview.getBoundingClientRect();
+		var left = box.x + box.w + 14;
+		var top = box.y;
+		if (left + preview.width + 12 > body.width) left = box.x - preview.width - 14;
+		left = Math.max(12, Math.min(left, body.width - preview.width - 12));
+		top = Math.max(12, Math.min(top, body.height - preview.height - 12));
+		els.graphPreview.style.setProperty("--graph-preview-left", Math.round(left) + "px");
+		els.graphPreview.style.setProperty("--graph-preview-top", Math.round(top) + "px");
+	}
+
+	function scheduleHideGraphPreview() {
+		if (graphPreviewHideTimer) clearTimeout(graphPreviewHideTimer);
+		graphPreviewHideTimer = setTimeout(hideGraphPreview, 120);
+	}
+
+	function cancelHideGraphPreview() {
+		if (!graphPreviewHideTimer) return;
+		clearTimeout(graphPreviewHideTimer);
+		graphPreviewHideTimer = 0;
+	}
+
+	function hideGraphPreview() {
+		cancelHideGraphPreview();
+		graphHoveredId = null;
+		if (!els || !els.graphPreview) return;
+		els.graphPreview.classList.remove("open");
+		els.graphPreview.setAttribute("aria-hidden", "true");
+		els.canvas.style.cursor = "grab";
 	}
 
 	function zoomGraphBy(factor) {
@@ -1583,6 +1885,99 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		});
 	}
 
+	function visibleGraph() {
+		if (!model || !model.graph) return { nodes: [], edges: [] };
+		var nodeById = {};
+		model.graph.nodes.forEach(function (node) { nodeById[node.id] = node; });
+		var edges = model.graph.edges.filter(shouldShowGraphEdge);
+		var visibleIds = new Set();
+		if (graphMode === "all") addAllGraphNodes(visibleIds, edges, nodeById);
+		else if (graphMode === "focus") addFocusedGraphNodes(visibleIds, edges, nodeById);
+		else addOverviewGraphNodes(visibleIds, edges, nodeById);
+		if (!visibleIds.size) addOverviewGraphNodes(visibleIds, edges, nodeById);
+		var visibleEdges = edges.filter(function (edge) {
+			return visibleIds.has(edge.from) && visibleIds.has(edge.to);
+		});
+		return {
+			nodes: model.graph.nodes.filter(function (node) { return visibleIds.has(node.id); }),
+			edges: visibleEdges
+		};
+	}
+
+	function shouldShowGraphEdge(edge) {
+		return graphEdgeTypes[edge.type] !== false;
+	}
+
+	function addAllGraphNodes(visibleIds, edges, nodeById) {
+		var connected = new Set();
+		edges.forEach(function (edge) {
+			connected.add(edge.from);
+			connected.add(edge.to);
+		});
+		model.graph.nodes.forEach(function (node) {
+			if ((node.type === "code" || node.type === "scope") && !connected.has(node.id)) return;
+			visibleIds.add(node.id);
+		});
+	}
+
+	function addOverviewGraphNodes(visibleIds, edges, nodeById) {
+		model.graph.nodes.forEach(function (node) {
+			if (isGraphCoreNode(node)) visibleIds.add(node.id);
+		});
+		addSelectedGraphPath(visibleIds, nodeById);
+		addGraphNeighbors(visibleIds, edges, nodeById, selectedPath);
+		edges.forEach(function (edge) {
+			var to = nodeById[edge.to];
+			if (edge.type === "entries" && visibleIds.has(edge.from) && isGraphCoreNode(to)) {
+				visibleIds.add(edge.to);
+			}
+		});
+	}
+
+	function addFocusedGraphNodes(visibleIds, edges, nodeById) {
+		if (!selectedPath || !nodeById[selectedPath]) {
+			addOverviewGraphNodes(visibleIds, edges, nodeById);
+			return;
+		}
+		addSelectedGraphPath(visibleIds, nodeById);
+		addGraphNeighbors(visibleIds, edges, nodeById, selectedPath);
+	}
+
+	function addGraphNeighbors(visibleIds, edges, nodeById, path) {
+		if (!path || !nodeById[path]) return;
+		visibleIds.add(path);
+		edges.forEach(function (edge) {
+			if (edge.from === path && nodeById[edge.to]) visibleIds.add(edge.to);
+			if (edge.to === path && nodeById[edge.from]) visibleIds.add(edge.from);
+		});
+	}
+
+	function addSelectedGraphPath(visibleIds, nodeById) {
+		if (!selectedPath) return;
+		if (nodeById[selectedPath]) visibleIds.add(selectedPath);
+		if (selectedPath === "AGENTS.md") return;
+		var parts = selectedPath.split("/");
+		for (var i = 1; i < parts.length; i++) {
+			var dir = parts.slice(0, i).join("/");
+			var indexId = graphIndexForDir(dir, nodeById);
+			if (indexId) visibleIds.add(indexId);
+		}
+	}
+
+	function graphIndexForDir(dir, nodeById) {
+		if (!dir) return null;
+		var md = dir + "/index.md";
+		var mdc = dir + "/index.mdc";
+		if (nodeById[md]) return md;
+		if (nodeById[mdc]) return mdc;
+		return null;
+	}
+
+	function isGraphCoreNode(node) {
+		if (!node) return false;
+		return node.id === "AGENTS.md" || /^\\.axm\\/index\\.mdc?$/.test(node.id) || /^\\.axm\\/[^/]+\\/index\\.mdc?$/.test(node.id);
+	}
+
 	function drawGraph() {
 		if (!model) return;
 		var canvas = els.canvas;
@@ -1604,9 +1999,10 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 			ctx.fillText("No graph data", 28, 48);
 			return;
 		}
-		var nodes = layoutGraph(model.graph.nodes, model.graph.edges, rect.width, rect.height);
+		var graph = visibleGraph();
+		var nodes = layoutGraph(graph.nodes, graph.edges, rect.width, rect.height);
 		applyGraphTransform(ctx, dpr, rect.width, rect.height);
-		model.graph.edges.forEach(function (edge) {
+		graph.edges.forEach(function (edge) {
 			var from = nodes[edge.from];
 			var to = nodes[edge.to];
 			if (!from || !to) return;
@@ -1638,39 +2034,57 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 			else if (node.type === "code" || node.type === "scope") level = 4;
 			levels[level].push(node);
 		});
-		var top = 22;
-		var levelY = [top, top + 56, top + 132, Math.max(top + 214, height - 176), top + 100];
+		var top = 26;
+		var levelY = [];
+		var nextY = top;
 		levels.forEach(function (items, level) {
-			var baseW = level === 2 ? 142 : 120;
-			var usable = Math.max(baseW, width - (level === 3 ? 300 : 160));
-			var minGap = 28;
+			levelY[level] = nextY;
+			var baseW = graphColumnWidth(level);
+			var usable = Math.max(baseW, width - (level === 3 ? 180 : 240));
+			var minGap = level === 3 ? 56 : 44;
 			var columns = Math.max(1, Math.floor((usable + minGap) / (baseW + minGap)));
-			var startX = Math.max(28, (width - usable) / 2);
+			var rows = Math.max(1, Math.ceil(items.length / columns));
+			nextY += rows * 86 + (level === 2 ? 62 : 44);
+		});
+		levels.forEach(function (items, level) {
+			var baseW = graphColumnWidth(level);
+			var usable = Math.max(baseW, width - (level === 3 ? 180 : 240));
+			var minGap = level === 3 ? 56 : 44;
+			var columns = Math.max(1, Math.floor((usable + minGap) / (baseW + minGap)));
 			items.forEach(function (node, index) {
-				var w = node.type === "doc" && /\\/index\\.mdc?$/.test(node.id) ? 142 : 120;
+				var size = nodeSizeForGraph(node);
+				var w = size.w;
 				var col = index % columns;
 				var row = Math.floor(index / columns);
 				var usedColumns = Math.min(columns, items.length - row * columns);
-				var rowWidth = usedColumns * w + Math.max(0, usedColumns - 1) * minGap;
+				var rowWidth = usedColumns * baseW + Math.max(0, usedColumns - 1) * minGap;
 				var rowStart = Math.max(28, width / 2 - rowWidth / 2);
-				var x = rowStart + col * (w + minGap);
-				var y = levelY[level] + row * 62;
-				if (level === 4) {
-					x = width - 170;
-					y = 34 + index * 42;
-					if (y > height - 54) y = height - 54;
-				}
+				var x = rowStart + col * (baseW + minGap) + (baseW - w) / 2;
+				var y = levelY[level] + row * 80;
 				byId[node.id] = {
 					id: node.id,
 					node: node,
 					x: Math.max(18, Math.min(width - w - 18, x)),
 					y: y,
 					w: w,
-					h: node.type === "code" || node.type === "scope" ? 36 : 48
+					h: size.h
 				};
 			});
 		});
 		return byId;
+	}
+
+	function graphColumnWidth(level) {
+		if (level === 2) return 188;
+		if (level === 4) return 164;
+		return 176;
+	}
+
+	function nodeSizeForGraph(node) {
+		if (node.type === "code" || node.type === "scope") return { w: 156, h: 46 };
+		if (node.id === "AGENTS.md") return { w: 176, h: 58 };
+		if (node.type === "doc" && /\\/index\\.mdc?$/.test(node.id)) return { w: 184, h: 62 };
+		return { w: 176, h: 62 };
 	}
 
 	function applyGraphTransform(ctx, dpr, width, height) {
@@ -1684,6 +2098,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		var yOffset = (1 - graphView.zoom) * height / 2 + graphView.panY;
 		return {
 			id: box.id,
+			node: box.node,
 			x: box.x * graphView.zoom + xOffset,
 			y: box.y * graphView.zoom + yOffset,
 			w: box.w * graphView.zoom,
@@ -1699,14 +2114,14 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		roundRect(ctx, box.x, box.y, box.w, box.h, 7, fill, stroke, active ? 2.2 : 1.4);
 		ctx.fillStyle = colors[node.kind] || colors[node.type] || colors.index;
 		ctx.beginPath();
-		ctx.arc(box.x + 16, box.y + 20, active ? 6 : 4.5, 0, Math.PI * 2);
+		ctx.arc(box.x + 17, box.y + 19, active ? 6 : 4.5, 0, Math.PI * 2);
 		ctx.fill();
 		ctx.fillStyle = active ? "#0b55c7" : "#1f2937";
 		ctx.font = "600 12px Inter, sans-serif";
-		ctx.fillText(truncateToWidth(ctx, node.label || node.title, box.w - 43), box.x + 30, box.y + 19, box.w - 43);
+		ctx.fillText(truncateToWidth(ctx, node.label || node.title, box.w - 58), box.x + 31, box.y + 20, box.w - 58);
 		ctx.fillStyle = "#647184";
 		ctx.font = "11px Inter, sans-serif";
-		ctx.fillText(truncateToWidth(ctx, node.subtitle || node.path, box.w - 36), box.x + 30, box.y + 36, box.w - 36);
+		ctx.fillText(truncateToWidth(ctx, node.subtitle || node.path, box.w - 28), box.x + 14, box.y + 39, box.w - 28);
 		drawNodeStatus(ctx, box, node, stateStyle, active);
 		graphHitBoxes.push(screenBoxForGraph(box, screenWidth, screenHeight));
 	}
@@ -1717,15 +2132,10 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	}
 
 	function drawNodeStatus(ctx, box, node, style, active) {
-		var state = String(node.displayState || node.workflowState || node.docState || "unknown");
 		ctx.fillStyle = style.color;
 		ctx.beginPath();
-		ctx.arc(box.x + box.w - 10, box.y + 8, 5, 0, Math.PI * 2);
+		ctx.arc(box.x + box.w - 14, box.y + 15, active ? 6 : 5, 0, Math.PI * 2);
 		ctx.fill();
-		ctx.fillStyle = style.text;
-		ctx.font = "600 9px Inter, sans-serif";
-		var label = state === "in-progress" ? "IP" : state === "wont-fix" ? "WF" : state.slice(0, 1).toUpperCase();
-		ctx.fillText(label, box.x + box.w - 13, box.y + 24);
 	}
 
 	function drawArrow(ctx, from, to, color) {
@@ -1778,6 +2188,28 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 			out = out.slice(0, -1);
 		}
 		return out + "…";
+	}
+
+	function graphPreviewExcerpt(text) {
+		var tick = String.fromCharCode(96);
+		var axmMeta = new RegExp("^<!-- axm-meta[\\\\s\\\\S]*?-->\\\\s*");
+		var frontmatter = new RegExp("^---[\\\\s\\\\S]*?---\\\\s*");
+		var codeFence = new RegExp(tick + tick + tick + "[\\\\s\\\\S]*?" + tick + tick + tick, "g");
+		var inlineCode = new RegExp(tick + "([^" + tick + "]+)" + tick, "g");
+		var heading = new RegExp("^#+\\\\s+", "gm");
+		var bold = new RegExp("\\\\*\\\\*([^*]+)\\\\*\\\\*", "g");
+		var link = new RegExp("\\\\[([^\\\\]]+)\\\\]\\\\([^)]+\\\\)", "g");
+		var whitespace = new RegExp("\\\\s+", "g");
+		return truncate(String(text || "")
+			.replace(axmMeta, "")
+			.replace(frontmatter, "")
+			.replace(codeFence, " ")
+			.replace(heading, "")
+			.replace(inlineCode, "$1")
+			.replace(bold, "$1")
+			.replace(link, "$1")
+			.replace(whitespace, " ")
+			.trim(), 240);
 	}
 
 	function iconSvg(name, size) {

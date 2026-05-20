@@ -14,6 +14,7 @@
 
 import fs from "node:fs";
 import http from "node:http";
+import os from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -26,8 +27,15 @@ const DEFAULT_PORT = 8765;
 const ALLOW = "GET, HEAD, OPTIONS, POST";
 const execFileAsync = promisify(execFile);
 
-export function createPreviewServer({ target = "." } = {}) {
+export function createPreviewServer({ target = ".", onTargetChange = () => {} } = {}) {
 	let activeTarget = resolveInitialTarget(target);
+
+	function setActiveTarget(nextTarget) {
+		activeTarget = nextTarget;
+		try {
+			onTargetChange(activeTarget);
+		} catch {}
+	}
 
 	return http.createServer(async (req, res) => {
 		if (req.method === "OPTIONS") {
@@ -49,7 +57,7 @@ export function createPreviewServer({ target = "." } = {}) {
 				try {
 					const body = await readJsonBody(req);
 					const nextTarget = resolveAxmTarget(body.path);
-					activeTarget = nextTarget;
+					setActiveTarget(nextTarget);
 					send(res, 200, buildPreviewModel(activeTarget.path), req.method);
 				} catch (error) {
 					sendError(res, error, req.method);
@@ -60,7 +68,7 @@ export function createPreviewServer({ target = "." } = {}) {
 				try {
 					const chosenPath = await pickTargetFolder(activeTarget?.path);
 					const nextTarget = resolveAxmTarget(chosenPath);
-					activeTarget = nextTarget;
+					setActiveTarget(nextTarget);
 					send(res, 200, buildPreviewModel(activeTarget.path), req.method);
 				} catch (error) {
 					sendError(res, error, req.method);
@@ -156,6 +164,43 @@ function targetInfo(projectPath) {
 		path: resolved,
 		name: path.basename(resolved),
 	};
+}
+
+export function resolveStartupTarget(args) {
+	if (args.targetProvided) return args.target;
+	const lastTarget = readLastPreviewTarget();
+	if (lastTarget && resolveInitialTarget(lastTarget)) return lastTarget;
+	return args.target;
+}
+
+export function readLastPreviewTarget() {
+	try {
+		const parsed = JSON.parse(fs.readFileSync(previewStatePath(), "utf8"));
+		if (parsed && typeof parsed.lastTargetPath === "string") {
+			return path.resolve(parsed.lastTargetPath);
+		}
+	} catch {}
+	return null;
+}
+
+export function saveLastPreviewTarget(target) {
+	if (!target || typeof target.path !== "string") return false;
+	try {
+		const filePath = previewStatePath();
+		fs.mkdirSync(path.dirname(filePath), { recursive: true });
+		fs.writeFileSync(
+			filePath,
+			JSON.stringify({ lastTargetPath: path.resolve(target.path) }, null, 2) + "\n",
+			"utf8",
+		);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+function previewStatePath() {
+	return process.env.AXM_PREVIEW_STATE_PATH || path.join(os.homedir(), ".cache", "axiom", "preview.json");
 }
 
 async function pickTargetFolder(defaultPath) {
@@ -254,6 +299,7 @@ function sendError(res, error, method) {
 function parseArgs(argv) {
 	const args = {
 		target: ".",
+		targetProvided: false,
 		host: DEFAULT_HOST,
 		port: DEFAULT_PORT,
 	};
@@ -263,8 +309,10 @@ function parseArgs(argv) {
 		if (!match) throw new Error(`无法解析参数 "${arg}"`);
 		const key = match[1];
 		const value = match[2] ?? (argv[i + 1] && !argv[i + 1].startsWith("--") ? argv[++i] : true);
-		if (key === "target") args.target = String(value);
-		else if (key === "port") args.port = Number(value);
+		if (key === "target") {
+			args.target = String(value);
+			args.targetProvided = true;
+		} else if (key === "port") args.port = Number(value);
 		else if (key === "host") args.host = String(value);
 		else throw new Error(`未知参数 --${key}`);
 	}
@@ -314,8 +362,13 @@ function listenOnce(server, host, port) {
 async function main() {
 	try {
 		const args = parseArgs(process.argv);
-		const initialTarget = resolveInitialTarget(args.target);
-		const server = createPreviewServer(args);
+		const startupTarget = resolveStartupTarget(args);
+		const initialTarget = resolveInitialTarget(startupTarget);
+		if (initialTarget) saveLastPreviewTarget(initialTarget);
+		const server = createPreviewServer({
+			target: startupTarget,
+			onTargetChange: saveLastPreviewTarget,
+		});
 		const address = await listenWithFallback(server, args);
 		const url = `http://${address.address}:${address.port}/`;
 		console.log(`Axiom Preview: ${url}`);
