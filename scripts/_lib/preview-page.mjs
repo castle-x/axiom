@@ -397,6 +397,19 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	overflow: hidden;
 }
 .side-head strong { display: block; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; }
+.tree-toggle {
+	flex: 0 0 auto;
+	width: 30px;
+	height: 30px;
+	display: inline-grid;
+	place-items: center;
+	border: 1px solid var(--border);
+	border-radius: 7px;
+	background: #fff;
+	color: #68778a;
+}
+.tree-toggle:hover { border-color: var(--border-strong); background: #f7faff; color: #26374d; }
+.tree-toggle[aria-pressed="true"] { border-color: #b9d2f7; background: var(--accent-soft); color: #174ea6; }
 .tree { min-width: 0; max-width: 100%; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 8px 8px 18px; }
 .tree-row {
 	position: relative;
@@ -789,6 +802,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		<aside class="sidebar">
 			<div class="side-head">
 				<strong id="sideRootLabel">.axm</strong>
+				<button class="tree-toggle" id="showAllDocs" type="button" aria-label="Show deprecated documents" aria-pressed="false" title="Show deprecated documents">${icon("layers", 15)}</button>
 			</div>
 			<nav class="tree" id="fileTree" aria-label=".axm 文件树"></nav>
 			<div class="side-foot"><span id="sideDocCount">0 docs</span></div>
@@ -903,6 +917,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	var bugDialogOpen = false;
 	var bugFilter = "open";
 	var projectError = "";
+	var showDeprecatedDocs = false;
 	var iconPaths = ${JSON.stringify(ICON_PATHS)};
 	var colors = {
 		entries: "#1d6fe8",
@@ -982,6 +997,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		bugSearch: document.getElementById("bugSearchInput"),
 		bugList: document.getElementById("bugList"),
 		bugFilterButtons: document.querySelectorAll("[data-bug-filter]"),
+		showAllDocs: document.getElementById("showAllDocs"),
 		sideRootLabel: document.getElementById("sideRootLabel"),
 		results: document.getElementById("searchResults"),
 		canvas: document.getElementById("graphCanvas"),
@@ -1024,8 +1040,8 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		treeCollapsed = loadTreeCollapsed();
 		if (initial) {
 			var storedPath = localStorage.getItem("axmPreview:selectedPath");
-			selectedPath = findDoc(storedPath) ? storedPath : defaultDocPath();
-		} else if (!findDoc(selectedPath)) {
+			selectedPath = isDocVisible(findDoc(storedPath)) ? storedPath : defaultDocPath();
+		} else if (!isDocVisible(findDoc(selectedPath))) {
 			selectedPath = defaultDocPath();
 		}
 		if (selectedPath) localStorage.setItem("axmPreview:selectedPath", selectedPath);
@@ -1077,6 +1093,8 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		els.bugStat.disabled = true;
 		els.bugStat.setAttribute("aria-expanded", "false");
 		els.sideDocCount.textContent = "0 docs";
+		els.showAllDocs.setAttribute("aria-pressed", "false");
+		els.showAllDocs.disabled = true;
 		els.graphMeta.textContent = "0 nodes · 0 edges";
 		els.tree.innerHTML = "";
 		els.crumbs.innerHTML = "<strong>No project selected</strong>";
@@ -1403,12 +1421,18 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 
 	function renderAll() {
 		els.sideRootLabel.textContent = (model.target && model.target.name ? model.target.name : "project") + "/.axm";
-		els.docCount.textContent = model.summary.docs + " docs";
+		var hiddenDocs = hiddenDeprecatedCount();
+		var visibleDocs = visibleDocCount();
+		els.docCount.textContent = visibleDocs + " docs";
 		els.errorCount.textContent = model.summary.errors + " errors";
 		els.warningCount.textContent = model.summary.warnings + " warnings";
 		els.bugCount.textContent = model.summary.bugs + " bugs";
 		els.bugStat.disabled = false;
-		els.sideDocCount.textContent = model.summary.docs + " docs";
+		els.sideDocCount.textContent = visibleDocs + " docs" + (!showDeprecatedDocs && hiddenDocs ? " · " + hiddenDocs + " hidden" : "");
+		els.showAllDocs.disabled = hiddenDocs === 0;
+		els.showAllDocs.setAttribute("aria-pressed", showDeprecatedDocs ? "true" : "false");
+		els.showAllDocs.setAttribute("aria-label", showDeprecatedDocs ? "Hide deprecated documents" : "Show deprecated documents");
+		els.showAllDocs.title = showDeprecatedDocs ? "Hide deprecated documents" : "Show deprecated documents";
 		updateGraphControls();
 		updateGraphMeta();
 		renderTree();
@@ -1457,15 +1481,42 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	}
 
 	function defaultDocPath() {
-		if (findDoc(".axm/universal/docs.md")) return ".axm/universal/docs.md";
-		if (findDoc(".axm/index.md")) return ".axm/index.md";
-		if (findDoc(".axm/index.mdc")) return ".axm/index.mdc";
-		return model.documents[0] ? model.documents[0].path : null;
+		if (isDocVisible(findDoc(".axm/universal/docs.md"))) return ".axm/universal/docs.md";
+		if (isDocVisible(findDoc(".axm/index.md"))) return ".axm/index.md";
+		if (isDocVisible(findDoc(".axm/index.mdc"))) return ".axm/index.mdc";
+		var first = model.documents.find(function (doc) { return isDocVisible(doc); });
+		return first ? first.path : null;
 	}
 
 	function findDoc(path) {
 		if (!path) return null;
 		return model.documents.find(function (doc) { return doc.path === path; }) || null;
+	}
+
+	function isDeprecatedDoc(doc) {
+		return doc && doc.meta && doc.meta["doc-state"] === "deprecated";
+	}
+
+	function isDocVisible(doc) {
+		return !!doc && (showDeprecatedDocs || !isDeprecatedDoc(doc));
+	}
+
+	function hiddenDeprecatedCount() {
+		if (!model || !model.documents) return 0;
+		return model.documents.filter(function (doc) { return isDeprecatedDoc(doc); }).length;
+	}
+
+	function visibleDocCount() {
+		if (!model || !model.documents) return 0;
+		return model.documents.filter(function (doc) { return isDocVisible(doc); }).length;
+	}
+
+	function setShowDeprecatedDocs(next) {
+		showDeprecatedDocs = !!next;
+		if (!isDocVisible(findDoc(selectedPath))) selectedPath = defaultDocPath();
+		if (selectedPath) localStorage.setItem("axmPreview:selectedPath", selectedPath);
+		renderAll();
+		if (els.search.value.trim()) runSearch(els.search.value);
 	}
 
 	function renderTree() {
@@ -1480,6 +1531,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	}
 
 	function renderTreeNode(node, depth, parent) {
+		if (!isTreeNodeVisible(node)) return;
 		var indent = 6 + depth * 14 + "px";
 		if (node.type === "dir") {
 			var collapsed = treeCollapsed.has(node.path);
@@ -1506,6 +1558,12 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		row.innerHTML = '<span class="tree-disclosure placeholder">' + iconSvg("chevron-right", 13) + '</span><span class="tree-icon">' + docIcon(node) + '</span><span class="tree-name">' + escapeHtml(displayName) + '</span>';
 		row.addEventListener("click", function () { selectDoc(node.path); });
 		parent.appendChild(row);
+	}
+
+	function isTreeNodeVisible(node) {
+		if (!node) return false;
+		if (node.type === "doc") return showDeprecatedDocs || node.docState !== "deprecated";
+		return (node.children || []).some(function (child) { return isTreeNodeVisible(child); });
 	}
 
 	function docIcon(doc) {
@@ -1542,7 +1600,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	}
 
 	function selectDoc(path) {
-		if (!findDoc(path)) return;
+		if (!isDocVisible(findDoc(path))) return;
 		selectedPath = path;
 		localStorage.setItem("axmPreview:selectedPath", path);
 		revealPath(path);
@@ -1760,7 +1818,9 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 			renderTree();
 			return;
 		}
-		var matches = model.documents.filter(function (doc) { return doc.searchText.indexOf(q) !== -1; }).slice(0, 24);
+		var matches = model.documents.filter(function (doc) {
+			return isDocVisible(doc) && doc.searchText.indexOf(q) !== -1;
+		}).slice(0, 24);
 		positionSearchResults();
 		els.results.classList.add("open");
 		if (!matches.length) {
@@ -1798,6 +1858,9 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	});
 	els.search.addEventListener("focus", function () {
 		if (els.results.classList.contains("open")) positionSearchResults();
+	});
+	els.showAllDocs.addEventListener("click", function () {
+		setShowDeprecatedDocs(!showDeprecatedDocs);
 	});
 	els.bugStat.addEventListener("click", openBugDialog);
 	els.bugDialogClose.addEventListener("click", closeBugDialog);
@@ -2115,7 +2178,9 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		if (!model || !model.graph) return { nodes: [], edges: [] };
 		var nodeById = {};
 		model.graph.nodes.forEach(function (node) { nodeById[node.id] = node; });
-		var edges = model.graph.edges.filter(shouldShowGraphEdge);
+		var edges = model.graph.edges.filter(function (edge) {
+			return shouldShowGraphEdge(edge) && isGraphNodeVisible(nodeById[edge.from]) && isGraphNodeVisible(nodeById[edge.to]);
+		});
 		var visibleIds = new Set();
 		if (graphMode === "all") addAllGraphNodes(visibleIds, edges, nodeById);
 		else if (graphMode === "focus") addFocusedGraphNodes(visibleIds, edges, nodeById);
@@ -2125,13 +2190,18 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 			return visibleIds.has(edge.from) && visibleIds.has(edge.to);
 		});
 		return {
-			nodes: model.graph.nodes.filter(function (node) { return visibleIds.has(node.id); }),
+			nodes: model.graph.nodes.filter(function (node) { return visibleIds.has(node.id) && isGraphNodeVisible(node); }),
 			edges: visibleEdges
 		};
 	}
 
 	function shouldShowGraphEdge(edge) {
 		return graphEdgeTypes[edge.type] !== false;
+	}
+
+	function isGraphNodeVisible(node) {
+		if (!node) return false;
+		return node.type !== "doc" || showDeprecatedDocs || node.docState !== "deprecated";
 	}
 
 	function addAllGraphNodes(visibleIds, edges, nodeById) {
@@ -2141,6 +2211,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 			connected.add(edge.to);
 		});
 		model.graph.nodes.forEach(function (node) {
+			if (!isGraphNodeVisible(node)) return;
 			if ((node.type === "code" || node.type === "scope") && !connected.has(node.id)) return;
 			visibleIds.add(node.id);
 		});
@@ -2148,13 +2219,13 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 
 	function addOverviewGraphNodes(visibleIds, edges, nodeById) {
 		model.graph.nodes.forEach(function (node) {
-			if (isGraphCoreNode(node)) visibleIds.add(node.id);
+			if (isGraphNodeVisible(node) && isGraphCoreNode(node)) visibleIds.add(node.id);
 		});
 		addSelectedGraphPath(visibleIds, nodeById);
 		addGraphNeighbors(visibleIds, edges, nodeById, selectedPath);
 		edges.forEach(function (edge) {
 			var to = nodeById[edge.to];
-			if (edge.type === "entries" && visibleIds.has(edge.from) && isGraphCoreNode(to)) {
+			if (edge.type === "entries" && visibleIds.has(edge.from) && isGraphNodeVisible(to) && isGraphCoreNode(to)) {
 				visibleIds.add(edge.to);
 			}
 		});
@@ -2170,23 +2241,23 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	}
 
 	function addGraphNeighbors(visibleIds, edges, nodeById, path) {
-		if (!path || !nodeById[path]) return;
+		if (!path || !isGraphNodeVisible(nodeById[path])) return;
 		visibleIds.add(path);
 		edges.forEach(function (edge) {
-			if (edge.from === path && nodeById[edge.to]) visibleIds.add(edge.to);
-			if (edge.to === path && nodeById[edge.from]) visibleIds.add(edge.from);
+			if (edge.from === path && isGraphNodeVisible(nodeById[edge.to])) visibleIds.add(edge.to);
+			if (edge.to === path && isGraphNodeVisible(nodeById[edge.from])) visibleIds.add(edge.from);
 		});
 	}
 
 	function addSelectedGraphPath(visibleIds, nodeById) {
 		if (!selectedPath) return;
-		if (nodeById[selectedPath]) visibleIds.add(selectedPath);
+		if (isGraphNodeVisible(nodeById[selectedPath])) visibleIds.add(selectedPath);
 		if (selectedPath === "AGENTS.md") return;
 		var parts = selectedPath.split("/");
 		for (var i = 1; i < parts.length; i++) {
 			var dir = parts.slice(0, i).join("/");
 			var indexId = graphIndexForDir(dir, nodeById);
-			if (indexId) visibleIds.add(indexId);
+			if (indexId && isGraphNodeVisible(nodeById[indexId])) visibleIds.add(indexId);
 		}
 	}
 

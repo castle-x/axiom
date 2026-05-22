@@ -585,6 +585,7 @@ describe("AXM preview HTTP server", () => {
 		const html = buildPreviewHtml();
 
 		assert.match(html, /id="fileTree"/);
+		assert.match(html, /id="showAllDocs"/);
 		assert.match(html, /id="markdownView"/);
 		assert.match(html, /id="metaPanel"/);
 		assert.match(html, /id="graphCanvas"/);
@@ -671,6 +672,13 @@ describe("AXM preview HTTP server", () => {
 		assert.doesNotMatch(html, /<span>validate\.mjs<\/span>/);
 		assert.doesNotMatch(html, /class="icon-btn refresh-btn"/);
 		assert.match(html, /findDoc\("\.axm\/index\.mdc"\)/);
+		assert.match(html, /function isDeprecatedDoc\(doc\)/);
+		assert.match(html, /function isDocVisible\(doc\)/);
+		assert.match(html, /function isTreeNodeVisible\(node\)/);
+		assert.match(html, /setShowDeprecatedDocs\(!showDeprecatedDocs\)/);
+		assert.match(html, /isDocVisible\(findDoc\(storedPath\)\)/);
+		assert.match(html, /isDocVisible\(doc\) && doc\.searchText\.indexOf\(q\) !== -1/);
+		assert.match(html, /isGraphNodeVisible\(nodeById\[edge\.from\]\) && isGraphNodeVisible\(nodeById\[edge\.to\]\)/);
 		assert.match(html, /index\\\.mdc\?/);
 		assert.match(html, /doc\.kind === "agents"\) return "AGENTS\.md"/);
 		assert.doesNotMatch(html, /\b(save|delete|edit|upload|write|run command)\b/i);
@@ -781,6 +789,9 @@ describe("AXM preview HTTP server", () => {
 		assert.match(html, /renderTreeChildren\(model\.tree\.children \|\| \[\], 0, els\.tree\)/);
 		assert.match(html, /--tree-indent/);
 		assert.match(html, /id="sideRootLabel"/);
+		assert.match(html, /aria-label="Show deprecated documents"/);
+		assert.match(html, /hiddenDeprecatedCount/);
+		assert.match(html, /visibleDocCount/);
 		assert.match(html, /\/\.axm"/);
 		assert.match(html, /--content-head-height: 48px/);
 		assert.match(html, /grid-template-rows: var\(--content-head-height\) 1fr 44px/);
