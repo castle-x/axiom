@@ -367,6 +367,125 @@ describe("AXM preview data model", () => {
 		assert.equal(model.summary.byDocState.current, 7);
 		assert.equal(model.summary.byWorkflowState["in-progress"], 1);
 	});
+
+	test("preview model exposes open BUG inventory for the topbar", () => {
+		const root = makeTempRepo();
+		writeDoc(
+			root,
+			".axm/index.md",
+			{
+				"doc-state": "current",
+				"last-reviewed": "2026-05-15",
+				owner: "axm-core",
+				entries: [
+					{ path: "universal/", title: "通用规范", "when-to-read": "跨项目通用规则" },
+					{ path: "progress/", title: "进度", "when-to-read": "进度状态" },
+				],
+			},
+			"# .axm\n\nRoot index.",
+		);
+		writeDoc(
+			root,
+			".axm/progress/index.md",
+			{
+				"doc-state": "current",
+				"last-reviewed": "2026-05-15",
+				owner: "axm-core",
+				entries: [{ path: "quality/", title: "Quality", "when-to-read": "Quality progress" }],
+			},
+			"# progress\n\nProgress index.",
+		);
+		writeDoc(
+			root,
+			".axm/progress/quality/index.md",
+			{
+				"doc-state": "current",
+				"last-reviewed": "2026-05-15",
+				owner: "axm-core",
+				entries: [{ path: "bugs/", title: "Bugs", "when-to-read": "Bug board" }],
+			},
+			"# quality\n\nQuality progress.",
+		);
+		writeDoc(
+			root,
+			".axm/progress/quality/bugs/index.md",
+			{
+				"doc-state": "current",
+				"last-reviewed": "2026-05-15",
+				owner: "axm-core",
+				entries: [
+					{ path: "bug-2026-05-15-login-timeout.md", title: "Login timeout", "when-to-read": "Open bug" },
+					{ path: "bug-2026-05-16-cache-stale.md", title: "Cache stale", "when-to-read": "Fixed bug awaiting close" },
+					{ path: "bug-2026-05-17-old-report.md", title: "Old report", "when-to-read": "Closed bug" },
+				],
+			},
+			"# bugs\n\nBug index.",
+		);
+		writeDoc(
+			root,
+			".axm/progress/quality/bugs/bug-2026-05-15-login-timeout.md",
+			{
+				"doc-state": "current",
+				"last-reviewed": "2026-05-15",
+				owner: "axm-core",
+				"progress-type": "bug",
+				initiative: "quality",
+				"workflow-state": "open",
+				"state-updated": "2026-05-15",
+				priority: "P1",
+				severity: "Major",
+			},
+			"# bug-2026-05-15-login-timeout — 登录超时\n\n复现步骤：登录接口超时。",
+		);
+		writeDoc(
+			root,
+			".axm/progress/quality/bugs/bug-2026-05-16-cache-stale.md",
+			{
+				"doc-state": "current",
+				"last-reviewed": "2026-05-16",
+				owner: "axm-core",
+				"progress-type": "bug",
+				initiative: "quality",
+				"workflow-state": "fixed",
+				"state-updated": "2026-05-16",
+				priority: "P2",
+				severity: "Minor",
+			},
+			"# bug-2026-05-16-cache-stale — 缓存未刷新\n\n等待人工关闭。",
+		);
+		writeDoc(
+			root,
+			".axm/progress/quality/bugs/bug-2026-05-17-old-report.md",
+			{
+				"doc-state": "current",
+				"last-reviewed": "2026-05-17",
+				owner: "axm-core",
+				"progress-type": "bug",
+				initiative: "quality",
+				"workflow-state": "closed",
+				"state-updated": "2026-05-17",
+				priority: "P3",
+				severity: "Trivial",
+			},
+			"# bug-2026-05-17-old-report — 已关闭问题\n\n历史记录。",
+		);
+
+		const model = buildPreviewModel(root);
+
+		assert.equal(model.summary.bugs, 2);
+		assert.equal(model.bugs.openCount, 2);
+		assert.deepEqual(model.bugs.byState, { closed: 1, fixed: 1, open: 1 });
+		assert.deepEqual(
+			model.bugs.items.map((bug) => [bug.path, bug.state, bug.open, bug.priority, bug.severity]),
+			[
+				[".axm/progress/quality/bugs/bug-2026-05-15-login-timeout.md", "open", true, "P1", "Major"],
+				[".axm/progress/quality/bugs/bug-2026-05-16-cache-stale.md", "fixed", true, "P2", "Minor"],
+				[".axm/progress/quality/bugs/bug-2026-05-17-old-report.md", "closed", false, "P3", "Trivial"],
+			],
+		);
+		assert.match(model.bugs.items[0].searchText, /login-timeout/);
+		assert.match(model.bugs.items[0].excerpt, /复现步骤/);
+	});
 	});
 
 describe("AXM preview HTTP server", () => {
@@ -534,6 +653,20 @@ describe("AXM preview HTTP server", () => {
 		assert.match(html, /All issues/);
 		assert.match(html, /id="errorCount">0 errors/);
 		assert.match(html, /class="stat-dot err"><\/span><span id="errorCount"/);
+		assert.match(html, /id="bugStat"/);
+		assert.match(html, /id="bugCount">0 bugs/);
+		assert.match(html, /function openBugDialog\(\)/);
+		assert.match(html, /function renderBugDialog\(\)/);
+		assert.match(html, /function filteredBugItems\(\)/);
+		assert.match(html, /id="bugDialog"/);
+		assert.match(html, /id="bugSearchInput"/);
+		assert.match(html, /data-bug-filter="open"/);
+		assert.match(html, /selectDoc\(bug\.path\)/);
+		assert.match(html, /\.tree \{[^}]*min-width: 0;/);
+		assert.match(html, /\.tree \{[^}]*max-width: 100%;/);
+		assert.match(html, /\.tree-row \{[^}]*overflow: hidden;/);
+		assert.match(html, /\.side-head, \.side-foot \{[^}]*min-width: 0;/);
+		assert.match(html, /\.side-head strong \{[^}]*display: block;/);
 		assert.doesNotMatch(html, /class="stat-dot ok"><\/span><span id="errorCount"/);
 		assert.doesNotMatch(html, /<span>validate\.mjs<\/span>/);
 		assert.doesNotMatch(html, /class="icon-btn refresh-btn"/);
@@ -661,7 +794,7 @@ describe("AXM preview HTTP server", () => {
 		assert.match(html, /\.tree-row\.active \.tree-name \{ color: var\(--accent\); \}/);
 		assert.match(html, /\.tree-disclosure\.placeholder \{ opacity: 0; \}/);
 		assert.doesNotMatch(html, /\.tree-row \{[^}]*height: 24px;[^}]*\}/);
-		assert.doesNotMatch(html, /\.tree-row \{[^}]*overflow: hidden;[^}]*\}/);
+		assert.match(html, /\.tree-row \{[^}]*overflow: hidden;[^}]*\}/);
 		assert.doesNotMatch(html, /\.tree-row\.active \{[^}]*background:[^}]*\}/);
 		assert.doesNotMatch(html, /\.tree-row\.active \{[^}]*box-shadow:[^}]*\}/);
 		assert.doesNotMatch(html, /tree-disclosure empty/);

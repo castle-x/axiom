@@ -16,7 +16,8 @@ export function buildPreviewModel(target = ".") {
 	const tree = buildTree(documents);
 	const graph = buildGraph({ documents, documentMap, repoRoot });
 	const validation = validateAxmProject(repoRoot);
-	const summary = buildSummary(documents, validation);
+	const bugs = buildBugInventory(documents);
+	const summary = buildSummary(documents, validation, bugs);
 
 	return {
 		version: 1,
@@ -29,6 +30,7 @@ export function buildPreviewModel(target = ".") {
 		tree,
 		documents,
 		graph,
+		bugs,
 		validation,
 	};
 }
@@ -372,7 +374,7 @@ function isIndexDocName(name) {
 	return name === "index.md" || name === "index.mdc";
 }
 
-function buildSummary(documents, validation) {
+function buildSummary(documents, validation, bugs) {
 	const byDocState = { current: 0, draft: 0, deprecated: 0, unknown: 0 };
 	const byWorkflowState = {};
 	for (const doc of documents) {
@@ -389,11 +391,75 @@ function buildSummary(documents, validation) {
 		agentsDocs,
 		errors: validation.errors,
 		warnings: validation.warnings,
+		bugs: bugs.openCount,
 		status: validation.status,
 		byDocState,
 		byWorkflowState,
 		lines: documents.reduce((sum, doc) => sum + doc.lineCount, 0),
 	};
+}
+
+const OPEN_BUG_STATES = new Set(["open", "in-progress", "fixed", "verified", "reopened"]);
+
+function buildBugInventory(documents) {
+	const items = documents
+		.filter((doc) => isBugDoc(doc))
+		.map((doc) => bugItemForDoc(doc));
+	const byState = {};
+	for (const item of items) {
+		byState[item.state] = (byState[item.state] ?? 0) + 1;
+	}
+	const openCount = items.filter((item) => item.open).length;
+	return {
+		open: openCount,
+		openCount,
+		total: items.length,
+		byState,
+		items,
+	};
+}
+
+function isBugDoc(doc) {
+	return doc.meta["progress-type"] === "bug" || /^\.axm\/progress\/[^/]+\/bugs\/bug-\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/.test(doc.path);
+}
+
+function bugItemForDoc(doc) {
+	const state = workflowStateForDoc(doc) ?? "unknown";
+	const priority = doc.meta.priority ?? extractBodyField(doc.body, "priority") ?? "";
+	const severity = doc.meta.severity ?? extractBodyField(doc.body, "severity") ?? "";
+	return {
+		path: doc.path,
+		title: doc.title,
+		subtitle: doc.subtitle,
+		initiative: doc.meta.initiative ?? inferInitiative(doc.path),
+		state,
+		open: OPEN_BUG_STATES.has(state),
+		stateUpdated: doc.meta["state-updated"] ?? "",
+		priority,
+		severity,
+		excerpt: bugExcerpt(doc.body),
+		searchText: [doc.searchText, priority, severity].filter(Boolean).join("\n").toLowerCase(),
+	};
+}
+
+function inferInitiative(relPath) {
+	const parts = relPath.split("/");
+	return parts[2] === "progress" ? parts[3] ?? "" : "";
+}
+
+function extractBodyField(body, field) {
+	const pattern = new RegExp(`^\\|\\s*${field}\\s*\\|\\s*([^|]+?)\\s*\\|`, "im");
+	const match = body.match(pattern);
+	return match ? stripMarkdown(match[1].trim()) : null;
+}
+
+function bugExcerpt(body) {
+	for (const line of body.split(/\r?\n/)) {
+		const trimmed = line.trim();
+		if (!trimmed || trimmed.startsWith("#") || trimmed.startsWith("|") || trimmed.startsWith("```")) continue;
+		return stripMarkdown(trimmed).slice(0, 140);
+	}
+	return "";
 }
 
 function docStateForDoc(doc) {

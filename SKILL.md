@@ -3,7 +3,7 @@ name: axm
 description: |
   为项目建立 AI 可读的上下文知识库——`.axm/` 目录（规范 / 知识 / 索引 / 进度四类文档）加根目录 `AGENTS.md` 路由表，用 `doc-state` 区分文档是否仍应作为上下文，让 AI 接手任务时不必每次重新解释技术栈与架构。
 
-  在以下场景必须立即调用：初始化或补全 axm / `AGENTS.md`；校验 axm-meta 契约（validate.mjs）、同步 index（reindex.mjs）或启动只读预览器（preview.mjs）；管理 roadmap / spec / 开发进度并写入 axm；管理 BUG（提交、优先级、验收、workflow-state 流转、关闭、重开）。
+  在以下场景必须立即调用：初始化或补全 axm / `AGENTS.md`；校验 axm-meta 契约（validate.mjs）、同步 index（reindex.mjs）或启动只读预览器（preview.mjs）；对现有 `.axm/` 做文档体检 / 事实漂移审计；管理 roadmap / spec / 开发进度并写入 axm；管理 BUG（提交、优先级、验收、workflow-state 流转、关闭、重开）。
 ---
 
 # axm
@@ -23,7 +23,8 @@ axm/
 │   ├── knowledge-doc-guide.md     # 写 knowledge/**/*.md 的要点
 │   ├── agents-md-guide.md         # 定制 AGENTS.md 的要点
 │   ├── progress-doc-guide.md      # 写 progress/**/*.md 的要点
-│   └── bug-doc-guide.md           # 写 progress/bugs/**/*.md 的要点（通用 BUG 管理规范）
+│   ├── bug-doc-guide.md           # 写 progress/bugs/**/*.md 的要点（通用 BUG 管理规范）
+│   └── axm-health-check-guide.md  # 多 agent 文档体检 / 事实漂移审计指南
 ├── templates/            # 脚本逐字释放的模板（.tpl 后缀）
 │   ├── AGENTS.md.tpl
 │   └── axm/              # 释放到目标仓库的 .axm/
@@ -192,6 +193,12 @@ roadmap 记录较大路线图和事实进度；spec 记录某次阶段开发的�
 
 剩下的（命名、骨架、生命周期 8 状态、看板、测试/开发/验收三套流程、反模式、自查清单）全部在 `bug-doc-guide.md` 中，不在本文件复述。
 
+#### 3.9 可选：axm 文档体检（多 agent 并行）
+
+当用户说"用 axm 给当前项目的 .axm 体检"、"axm health check"、"审计/清理/归档 axm 文档库"时，先读 `<skill-path>/references/axm-health-check-guide.md`。这不是 `validate.mjs` 的替代，而是提示词驱动的深度审计：并行核对 `.axm` 文档事实是否仍符合当前代码、识别废弃 project/knowledge/progress 文档、闭合已经落地的 roadmap/spec，以及归档已经解决的 BUG。
+
+执行时必须优先启动多个独立 agent（工具支持时并行；不支持时分成互不污染的连续 passes），至少覆盖：文档清单与索引、代码事实核对、progress/spec/bug 闭合、AGENTS 路由一致性、最终仲裁复核。归档动作遵守 axm 契约：文档用 `doc-state: deprecated`，progress/spec/bug 用合适的 `workflow-state` 与 `state-updated`；不新建 archive 目录。改动后跑 `reindex.mjs --dry-run` 和 `validate.mjs`，ERROR 必须修。
+
 ### Phase 4 Validate（脚本执行）
 
 **目标**：机械校验 Phase 2+3 的产物符合 `docs.md` 契约。
@@ -257,6 +264,14 @@ node <skill-path>/scripts/validate.mjs --target=<项目根绝对路径>
 ```bash
 node <skill-path>/scripts/validate.mjs --target=<项目根>
 ```
+
+### 深度体检已有 .axm
+
+用户说"用 axm 给当前项目的 `.axm` 体检"、"检查 axm 文档是否符合代码事实"、"归档废弃 spec / plan / bug"等，先读 `<skill-path>/references/axm-health-check-guide.md`，再执行体检流程。
+
+体检不是只跑 `validate.mjs`：必须先跑机械检查（`validate.mjs`、必要时 `reindex.mjs --dry-run`），再用当前环境可用的多 agent / subagent / Task 能力并行审查代码事实、项目规范、knowledge、progress/spec、BUG 状态。若当前环境没有可用的并行 agent 能力，必须说明限制，并按同样职责分轮完成，不要声称已经并行。
+
+体检的"归档"默认是状态归档：不新建 `archive/` 目录，不移动 universal 文件；对废弃文档改 `doc-state: deprecated`，对完成或失效的 roadmap/spec/bug 更新 `workflow-state` 与 `state-updated`，并在正文记录证据。只有用户明确要求且契约允许时，才考虑删除。
 
 ### 只同步 index
 

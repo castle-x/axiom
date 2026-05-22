@@ -206,6 +206,91 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 .path-secondary { color: #566274; background: #f2f6fb; }
 .path-primary { color: #fff; background: var(--accent); }
 .path-primary[disabled], .path-secondary[disabled] { opacity: .65; cursor: wait; }
+.bug-backdrop {
+	position: fixed;
+	inset: 0;
+	display: none;
+	align-items: flex-start;
+	justify-content: center;
+	padding: 76px 16px 24px;
+	background: rgba(29, 36, 48, .24);
+	z-index: 42;
+}
+.bug-backdrop.open { display: flex; }
+.bug-dialog {
+	width: min(860px, calc(100vw - 32px));
+	max-height: min(720px, calc(100vh - 100px));
+	display: grid;
+	grid-template-rows: auto auto minmax(0, 1fr);
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	background: #fff;
+	box-shadow: var(--shadow);
+	overflow: hidden;
+}
+.bug-dialog-sub { margin-top: 3px; color: var(--muted); font-size: 12px; font-weight: 500; }
+.bug-toolbar {
+	display: grid;
+	grid-template-columns: minmax(220px, 1fr) auto;
+	gap: 12px;
+	align-items: center;
+	padding: 8px 16px 12px;
+	border-bottom: 1px solid var(--border);
+}
+.bug-search {
+	height: 34px;
+	display: flex;
+	align-items: center;
+	border: 1px solid var(--border-strong);
+	border-radius: 7px;
+	background: #fff;
+	color: #68778a;
+}
+.bug-search svg { margin-left: 10px; flex: 0 0 auto; }
+.bug-search input {
+	width: 100%;
+	height: 100%;
+	min-width: 0;
+	border: 0;
+	outline: 0;
+	padding: 0 10px;
+	background: transparent;
+	color: #263244;
+	font-size: 13px;
+}
+.bug-search:focus-within { border-color: #9ec2ff; box-shadow: 0 0 0 3px rgba(29,111,232,.12); }
+.bug-filters { display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; }
+.bug-filters button {
+	height: 30px;
+	padding: 0 10px;
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	background: #fff;
+	color: #566274;
+	font-size: 12px;
+	font-weight: 650;
+	white-space: nowrap;
+}
+.bug-filters button[aria-pressed="true"] { border-color: #b9d2f7; background: var(--accent-soft); color: #174ea6; }
+.bug-list { min-height: 0; overflow: auto; padding: 10px; background: #fbfcfe; }
+.bug-item {
+	width: 100%;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 12px;
+	padding: 12px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: #fff;
+	text-align: left;
+}
+.bug-item + .bug-item { margin-top: 8px; }
+.bug-item:hover { border-color: #b9d2f7; background: #f7faff; }
+.bug-title { min-width: 0; color: #1f2937; font-size: 13px; font-weight: 720; line-height: 1.35; overflow-wrap: anywhere; }
+.bug-path { margin-top: 4px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.bug-excerpt { margin-top: 8px; color: #465365; font-size: 12px; line-height: 1.5; }
+.bug-meta { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; align-content: start; max-width: 260px; }
+.bug-empty { padding: 28px 16px; color: var(--muted); font-size: 13px; text-align: center; }
 .project-action {
 	height: 24px;
 	display: inline-flex;
@@ -267,10 +352,14 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	background: #fff;
 	white-space: nowrap;
 }
+.stat-button { color: #263244; }
+.stat-button:hover, .stat-button[aria-expanded="true"] { border-color: #b9d2f7; background: #f7faff; }
+.stat-button[disabled] { opacity: .55; cursor: default; }
 .stat-dot { width: 9px; height: 9px; border-radius: 999px; background: var(--accent); }
 .stat-dot.ok { background: var(--green); }
 .stat-dot.warn { background: var(--yellow); }
 .stat-dot.err { background: var(--red); }
+.stat-dot.bug { background: var(--purple); }
 .icon-btn {
 	width: 34px;
 	height: 34px;
@@ -299,17 +388,20 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	grid-template-rows: var(--content-head-height) 1fr 44px;
 }
 .side-head, .side-foot {
+	min-width: 0;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	padding: 0 18px;
 	border-bottom: 1px solid var(--border);
+	overflow: hidden;
 }
-.side-head strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; }
-.tree { min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 8px 8px 18px; }
+.side-head strong { display: block; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; }
+.tree { min-width: 0; max-width: 100%; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 8px 8px 18px; }
 .tree-row {
 	position: relative;
 	width: 100%;
+	max-width: 100%;
 	display: grid;
 	grid-template-columns: 16px 16px minmax(0, 1fr);
 	align-items: center;
@@ -319,6 +411,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	border-radius: 5px;
 	color: #2f3a4a;
 	text-align: left;
+	overflow: hidden;
 }
 .tree-row.dir { font-weight: 500; }
 .tree-row:hover { background: #edf2f8; }
@@ -327,7 +420,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 .tree-row.hidden { display: none; }
 .tree-disclosure, .tree-icon { width: 16px; height: 16px; color: #68778a; display: inline-grid; place-items: center; flex: 0 0 auto; }
 .tree-disclosure.placeholder { opacity: 0; }
-.tree-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; line-height: 20px; padding: 1px 0; }
+.tree-name { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; line-height: 20px; padding: 1px 0; }
 .tree-row.dir .tree-name { color: #263244; }
 .workspace {
 	min-width: 0;
@@ -689,6 +782,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 			<div class="stat"><span class="stat-dot"></span><span id="docCount">0 docs</span></div>
 			<div class="stat"><span class="stat-dot err"></span><span id="errorCount">0 errors</span></div>
 			<div class="stat"><span class="stat-dot warn"></span><span id="warningCount">0 warnings</span></div>
+			<button class="stat stat-button" id="bugStat" type="button" aria-haspopup="dialog" aria-expanded="false" disabled><span class="stat-dot bug"></span><span id="bugCount">0 bugs</span></button>
 		</div>
 	</header>
 	<div class="shell">
@@ -747,6 +841,29 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	</div>
 </div>
 <div class="project-popover" id="projectDropdown" role="listbox" aria-label="Recent projects"></div>
+<div class="bug-backdrop" id="bugDialog" aria-hidden="true">
+	<div class="bug-dialog" role="dialog" aria-modal="true" aria-labelledby="bugDialogTitle">
+		<div class="path-dialog-head">
+			<div>
+				<div class="path-dialog-title" id="bugDialogTitle">Open bugs</div>
+				<div class="bug-dialog-sub" id="bugDialogSummary">0 unclosed · 0 total</div>
+			</div>
+			<button class="path-close" id="bugDialogClose" type="button" aria-label="Close">×</button>
+		</div>
+		<div class="bug-toolbar">
+			<label class="bug-search" aria-label="Search bugs">
+				${icon("search", 15)}
+				<input id="bugSearchInput" placeholder="Search bugs, state, priority" spellcheck="false">
+			</label>
+			<div class="bug-filters" role="group" aria-label="Bug filters">
+				<button type="button" data-bug-filter="open" aria-pressed="true">Open</button>
+				<button type="button" data-bug-filter="all" aria-pressed="false">All</button>
+				<button type="button" data-bug-filter="closed" aria-pressed="false">Closed</button>
+			</div>
+		</div>
+		<div class="bug-list" id="bugList"></div>
+	</div>
+</div>
 <div class="path-backdrop" id="pathDialog" aria-hidden="true">
 	<div class="path-dialog" role="dialog" aria-modal="true" aria-labelledby="pathDialogTitle">
 		<div class="path-dialog-head">
@@ -783,6 +900,8 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	var recentProjects = loadRecentProjects();
 	var projectMenuOpen = false;
 	var pathDialogOpen = false;
+	var bugDialogOpen = false;
+	var bugFilter = "open";
 	var projectError = "";
 	var iconPaths = ${JSON.stringify(ICON_PATHS)};
 	var colors = {
@@ -838,6 +957,8 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		docCount: document.getElementById("docCount"),
 		errorCount: document.getElementById("errorCount"),
 		warningCount: document.getElementById("warningCount"),
+		bugCount: document.getElementById("bugCount"),
+		bugStat: document.getElementById("bugStat"),
 		sideDocCount: document.getElementById("sideDocCount"),
 		tree: document.getElementById("fileTree"),
 		markdown: document.getElementById("markdownView"),
@@ -855,6 +976,12 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		pathDialogClose: document.getElementById("pathDialogClose"),
 		pathDialogCancel: document.getElementById("pathDialogCancel"),
 		pathDialogSubmit: document.getElementById("pathDialogSubmit"),
+		bugDialog: document.getElementById("bugDialog"),
+		bugDialogClose: document.getElementById("bugDialogClose"),
+		bugDialogSummary: document.getElementById("bugDialogSummary"),
+		bugSearch: document.getElementById("bugSearchInput"),
+		bugList: document.getElementById("bugList"),
+		bugFilterButtons: document.querySelectorAll("[data-bug-filter]"),
 		sideRootLabel: document.getElementById("sideRootLabel"),
 		results: document.getElementById("searchResults"),
 		canvas: document.getElementById("graphCanvas"),
@@ -946,6 +1073,9 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		els.docCount.textContent = "0 docs";
 		els.errorCount.textContent = "0 errors";
 		els.warningCount.textContent = "0 warnings";
+		els.bugCount.textContent = "0 bugs";
+		els.bugStat.disabled = true;
+		els.bugStat.setAttribute("aria-expanded", "false");
 		els.sideDocCount.textContent = "0 docs";
 		els.graphMeta.textContent = "0 nodes · 0 edges";
 		els.tree.innerHTML = "";
@@ -954,6 +1084,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		els.meta.innerHTML = '<div class="panel"><div class="panel-title"><span>Project</span></div><div class="validate-card"><div class="validate-row"><span class="validate-icon warn">' + iconSvg("folder", 13) + '</span><div><div class="validate-title">Open an Axiom project</div><div class="validate-sub">Choose a project folder that contains .axm, or switch to a recent project.</div></div></div></div></div>';
 		graphHitBoxes = [];
 		hideGraphPreview();
+		closeBugDialog();
 	}
 
 	function renderProjectPicker() {
@@ -1100,6 +1231,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		projectError = "";
 		closeProjectDropdown();
 		closePathDialog();
+		closeBugDialog();
 		return fetchJson("/api/pick-target", { method: "POST" })
 			.then(function (data) { applyModel(data, false); })
 			.catch(function (error) {
@@ -1118,6 +1250,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		projectMenuOpen = true;
 		projectError = "";
 		closePathDialog();
+		closeBugDialog();
 		renderProjectPicker();
 		els.projectDropdown.classList.add("open");
 		els.projectCurrent.setAttribute("aria-expanded", "true");
@@ -1147,6 +1280,7 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	function openPathDialog(message) {
 		projectError = "";
 		closeProjectDropdown();
+		closeBugDialog();
 		pathDialogOpen = true;
 		els.pathDialog.classList.add("open");
 		els.pathDialog.setAttribute("aria-hidden", "false");
@@ -1176,6 +1310,76 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		els.projectPathError.textContent = message || "";
 	}
 
+	function openBugDialog() {
+		if (!model) return;
+		closeProjectDropdown();
+		closePathDialog();
+		els.results.classList.remove("open");
+		bugDialogOpen = true;
+		els.bugDialog.classList.add("open");
+		els.bugDialog.setAttribute("aria-hidden", "false");
+		els.bugStat.setAttribute("aria-expanded", "true");
+		renderBugDialog();
+		els.bugSearch.focus();
+		els.bugSearch.select();
+	}
+
+	function closeBugDialog() {
+		bugDialogOpen = false;
+		els.bugDialog.classList.remove("open");
+		els.bugDialog.setAttribute("aria-hidden", "true");
+		els.bugStat.setAttribute("aria-expanded", "false");
+	}
+
+	function renderBugDialog() {
+		var inventory = model && model.bugs ? model.bugs : { items: [], openCount: 0, total: 0 };
+		var items = filteredBugItems();
+		els.bugDialogSummary.textContent = inventory.openCount + " unclosed · " + inventory.total + " total";
+		Array.prototype.forEach.call(els.bugFilterButtons, function (button) {
+			var pressed = button.dataset.bugFilter === bugFilter;
+			button.setAttribute("aria-pressed", pressed ? "true" : "false");
+		});
+		if (!items.length) {
+			els.bugList.innerHTML = '<div class="bug-empty">No bugs match the current filter.</div>';
+			return;
+		}
+		els.bugList.innerHTML = items.map(function (bug) {
+			var stateClass = chipClass(bug.state);
+			var chips = [
+				renderChip(bug.state, stateClass),
+				bug.priority ? renderChip(bug.priority, "") : "",
+				bug.severity ? renderChip(bug.severity, "") : "",
+				bug.initiative ? renderChip(bug.initiative, "") : "",
+				bug.stateUpdated ? renderChip(bug.stateUpdated, "state-date") : "",
+			].filter(Boolean).join("");
+			return '<button class="bug-item" type="button" data-bug-path="' + escapeHtml(bug.path) + '">' +
+				'<div><div class="bug-title">' + escapeHtml(bug.title) + '</div><div class="bug-path">' + escapeHtml(bug.path) + '</div><div class="bug-excerpt">' + escapeHtml(bug.excerpt || bug.subtitle || "No preview text available.") + '</div></div>' +
+				'<div class="bug-meta">' + chips + '</div>' +
+				'</button>';
+		}).join("");
+	}
+
+	function filteredBugItems() {
+		if (!model || !model.bugs) return [];
+		var q = els.bugSearch.value.trim().toLowerCase();
+		return model.bugs.items.filter(function (bug) {
+			if (bugFilter === "open" && !bug.open) return false;
+			if (bugFilter === "closed" && bug.open) return false;
+			if (bugFilter !== "open" && bugFilter !== "closed" && bugFilter !== "all" && bug.state !== bugFilter) return false;
+			return bugMatchesQuery(bug, q);
+		});
+	}
+
+	function bugMatchesQuery(bug, query) {
+		if (!query) return true;
+		return bug.searchText.indexOf(query) !== -1;
+	}
+
+	function openBugInViewer(bug) {
+		selectDoc(bug.path);
+		closeBugDialog();
+	}
+
 	function handleTargetError(error) {
 		if (pathDialogOpen) {
 			setPathError(error.message);
@@ -1202,11 +1406,14 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 		els.docCount.textContent = model.summary.docs + " docs";
 		els.errorCount.textContent = model.summary.errors + " errors";
 		els.warningCount.textContent = model.summary.warnings + " warnings";
+		els.bugCount.textContent = model.summary.bugs + " bugs";
+		els.bugStat.disabled = false;
 		els.sideDocCount.textContent = model.summary.docs + " docs";
 		updateGraphControls();
 		updateGraphMeta();
 		renderTree();
 		renderSelected();
+		if (bugDialogOpen) renderBugDialog();
 		scheduleGraphDraw();
 	}
 
@@ -1592,6 +1799,24 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 	els.search.addEventListener("focus", function () {
 		if (els.results.classList.contains("open")) positionSearchResults();
 	});
+	els.bugStat.addEventListener("click", openBugDialog);
+	els.bugDialogClose.addEventListener("click", closeBugDialog);
+	els.bugDialog.addEventListener("click", function (event) {
+		if (event.target === els.bugDialog) closeBugDialog();
+	});
+	els.bugSearch.addEventListener("input", renderBugDialog);
+	Array.prototype.forEach.call(els.bugFilterButtons, function (button) {
+		button.addEventListener("click", function () {
+			bugFilter = button.dataset.bugFilter;
+			renderBugDialog();
+		});
+	});
+	els.bugList.addEventListener("click", function (event) {
+		var item = event.target.closest ? event.target.closest("[data-bug-path]") : null;
+		if (!item || !model || !model.bugs) return;
+		var bug = model.bugs.items.find(function (candidate) { return candidate.path === item.dataset.bugPath; });
+		if (bug) openBugInViewer(bug);
+	});
 	els.projectCurrent.addEventListener("click", toggleProjectDropdown);
 	els.openProject.addEventListener("click", openProject);
 	els.manualProject.addEventListener("click", function () { openPathDialog(""); });
@@ -1621,7 +1846,8 @@ button { border: 0; background: transparent; color: inherit; cursor: pointer; }
 			els.search.focus();
 		}
 		if (event.key === "Escape") {
-			if (pathDialogOpen) closePathDialog();
+			if (bugDialogOpen) closeBugDialog();
+			else if (pathDialogOpen) closePathDialog();
 			else if (projectMenuOpen) closeProjectDropdown();
 			else if (els.graphSection.classList.contains("fullscreen")) collapseGraph();
 			else els.results.classList.remove("open");
