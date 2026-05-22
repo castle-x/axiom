@@ -92,15 +92,20 @@ AI 会按 5 阶段 SOP 执行（详见 `SKILL.md`）：
 - `AGENTS.md` 与 `.axm/` 文件树
 - Markdown 正文、axm-meta（含 `doc-state` / `workflow-state`）与契约校验结果
 - 搜索结果、索引关系与 Knowledge Graph
+- 顶部 `bugs` 统计与可搜索、可过滤、可跳转的 BUG 管理弹窗
 - 最近打开项目的一键切换
 
-文档视图：
+主页：
 
 ![axiom_preview 只读预览器界面](docs/assets/axiom-preview.png)
 
-Knowledge Graph 视图：
+知识图谱：
 
 ![axiom_preview Knowledge Graph 视图](docs/assets/axiom-preview-graph.png)
+
+BUG 管理：
+
+![axiom_preview BUG 管理弹窗](docs/assets/axiom-preview-bugs.png)
 
 ## 直接调用脚本
 
