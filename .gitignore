@@ -22,3 +22,14 @@ Thumbs.db
 *.log
 *.tmp
 axm-skill-issues-*.md
+.playwright-cli/
+.pnpm-store/
+
+# preview 本地构建产物
+preview/axiom-preview
+preview/bin/
+preview/dist/
+preview/site/node_modules/
+preview/site/dist/assets/
+preview/site/test-results/
+preview/site/playwright-report/

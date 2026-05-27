@@ -1,0 +1,27 @@
+{
+  "name": "@castle-xx/axm-preview",
+  "version": "0.0.0",
+  "description": "Standalone Axiom .axm knowledge base previewer.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "axiom-preview": "./bin/axiom-preview.js"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "vendor",
+    "README.md"
+  ],
+  "keywords": [
+    "axiom",
+    "axm",
+    "preview"
+  ],
+  "engines": {
+    "node": ">=18.17"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

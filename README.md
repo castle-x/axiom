@@ -123,11 +123,21 @@ node /path/to/axm/scripts/validate.mjs --target=<repo-root>
 # 同步 index（保留已有顺序，追加孤儿，删除失效）
 node /path/to/axm/scripts/reindex.mjs --target=<repo-root> [--dry-run]
 
-# 启动只读 localhost 预览器（纯 HTML + Canvas）
+# 启动只读 localhost 预览器（legacy 纯 HTML + Canvas，仍保留）
 node /path/to/axm/scripts/preview.mjs [--target=<repo-root>] [--port=8765]
 # 或使用兼容原型图的启动方式
 python3 /path/to/axm/axm_preview.py [--target=<repo-root>] [--port=8765]
+
+# 构建新版 Go embedded SPA 预览器（React/Vite 前端嵌入 Go 二进制）
+cd /path/to/axm/preview
+make build
+./bin/axiom-preview --target=<repo-root> --port=8765
+
+# 生成 macOS / Linux / Windows 发布包
+make release VERSION=0.1.0
 ```
+
+新版预览器发布流程在 `.github/workflows/preview-release.yml`：推送 `preview-v<version>` tag 或手动运行 workflow 会构建 macOS / Linux / Windows 归档并创建 GitHub Release。配置仓库 secret `NPM_TOKEN` 后，同一流程会发布 npm 包 `@castle-xx/axm-preview`，用户可用 `npm install -g @castle-xx/axm-preview` 或 `npx @castle-xx/axm-preview` 启动。
 
 校验四件事：axm-meta 字段完整性 + 日期格式、`index.md` 与同目录实际文件双向一致、`knowledge/**` 的 `code-refs` 指向的源码真实存在、`AGENTS.md` Knowledge Index 引用的 `.axm` 路径可达。
 

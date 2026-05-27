@@ -304,6 +304,22 @@ node <skill-path>/scripts/preview.mjs [--target=<项目根>] [--port=8765]
 python3 <skill-path>/axm_preview.py [--target=<项目根>] [--port=8765]
 ```
 
+发布打包场景可使用新版 Go embedded SPA 预览器；它位于 `preview/`，前端由 Vite/React 构建后嵌入 Go 二进制：
+
+```bash
+cd <skill-path>/preview
+make build
+./bin/axiom-preview --target=<项目根> --port=8765
+
+# 生成 macOS / Linux / Windows 二进制
+make build-all
+
+# 生成 GitHub Release 归档与 npm staging 包
+make release VERSION=0.1.0
+```
+
+GitHub Actions 发布流程使用 `preview-v<version>` tag 或手动触发；发布 npm 包 `@castle-xx/axm-preview` 前需配置仓库 secret `NPM_TOKEN`。
+
 预览器只绑定 `127.0.0.1`；Web UI 可通过 `Open` 调用系统文件夹选择器、通过项目名下拉切换最近打开路径，或通过 `Path` 输入框手动切换当前预览项目。除切换本 preview 进程的当前 target 外，预览器只展示 `AGENTS.md` 与 `.axm/` 文档、axm-meta、校验摘要、搜索结果和 Canvas 关系图，不提供 scaffold / validate / reindex 执行入口，也不会写入目标仓库。
 
 ## 关键约束（必须遵守）
