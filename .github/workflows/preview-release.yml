@@ -19,6 +19,9 @@ on:
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   release:
     name: Build and publish preview
@@ -56,6 +59,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: preview/go.mod
+          cache: false
 
       - name: Setup Node
         uses: actions/setup-node@v4
