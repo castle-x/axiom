@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  root:
+    name: Root scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Test root scripts
+        run: node --test tests/*.mjs
+
+  preview:
+    name: Preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: preview/go.mod
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: preview/site/pnpm-lock.yaml
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install frontend dependencies
+        run: pnpm --dir preview/site install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: pnpm --dir preview/site exec playwright install --with-deps chromium
+
+      - name: Verify preview
+        run: make -C preview verify
+
+      - name: Package preview release
+        run: make -C preview release VERSION=0.0.0-ci.0
+
+      - name: Dry-run npm package
+        working-directory: preview/dist/npm
+        run: npm pack --dry-run
