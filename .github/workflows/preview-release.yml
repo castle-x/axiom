@@ -58,7 +58,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: preview/go.mod
+          go-version-file: apps/axm-preview/go.mod
           cache: false
 
       - name: Setup Node
@@ -73,16 +73,16 @@ jobs:
           version: 9
 
       - name: Install frontend dependencies
-        run: pnpm --dir preview/site install --frozen-lockfile
+        run: pnpm --dir apps/axm-preview/site install --frozen-lockfile
 
       - name: Install Playwright browser
-        run: pnpm --dir preview/site exec playwright install --with-deps chromium
+        run: pnpm --dir apps/axm-preview/site exec playwright install --with-deps chromium
 
       - name: Verify preview
-        run: make -C preview verify
+        run: make -C apps/axm-preview verify
 
       - name: Package release artifacts
-        run: make -C preview release VERSION=${{ steps.release.outputs.version }}
+        run: make -C apps/axm-preview release VERSION=${{ steps.release.outputs.version }}
 
       - name: Publish GitHub Release
         env:
@@ -95,16 +95,16 @@ jobs:
             gh release edit "$TAG" \
               --repo "$GITHUB_REPOSITORY" \
               --title "Axiom Preview $VERSION" \
-              --notes-file preview/dist/release/RELEASE_NOTES.md
-            gh release upload "$TAG" preview/dist/release/*.tar.gz \
+              --notes-file apps/axm-preview/dist/release/RELEASE_NOTES.md
+            gh release upload "$TAG" apps/axm-preview/dist/release/*.tar.gz \
               --repo "$GITHUB_REPOSITORY" \
               --clobber
           else
-            gh release create "$TAG" preview/dist/release/*.tar.gz \
+            gh release create "$TAG" apps/axm-preview/dist/release/*.tar.gz \
               --repo "$GITHUB_REPOSITORY" \
               --target "$GITHUB_SHA" \
               --title "Axiom Preview $VERSION" \
-              --notes-file preview/dist/release/RELEASE_NOTES.md
+              --notes-file apps/axm-preview/dist/release/RELEASE_NOTES.md
           fi
 
       - name: Detect npm token
@@ -123,7 +123,7 @@ jobs:
         if: ${{ steps.release.outputs.publish_npm == 'true' && steps.npm_token.outputs.available == 'true' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        working-directory: preview/dist/npm
+        working-directory: apps/axm-preview/dist/npm
         run: npm publish --access public
 
       - name: Skip npm publish

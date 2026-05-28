@@ -26,10 +26,10 @@ axm-skill-issues-*.md
 .pnpm-store/
 
 # preview 本地构建产物
-preview/axiom-preview
-preview/bin/
-preview/dist/
-preview/site/node_modules/
-preview/site/dist/assets/
-preview/site/test-results/
-preview/site/playwright-report/
+apps/axm-preview/axiom-preview
+apps/axm-preview/bin/
+apps/axm-preview/dist/
+apps/axm-preview/site/node_modules/
+apps/axm-preview/site/dist/assets/
+apps/axm-preview/site/test-results/
+apps/axm-preview/site/playwright-report/

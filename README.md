@@ -13,17 +13,30 @@ Axiom 把那份"你希望 AI 每次都已经知道的事情"沉淀成项目内�
 - BUG / roadmap / spec 等阶段性内容用 `doc-state` + `workflow-state` 统一骨架管理
 - 整套契约由零依赖 Node 脚本机械校验，避免人工漂移
 
-`.axm/` 的设计让 Claude Code、Codex、OpenCode 等支持 [Anthropic Agent Skill](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) 规范的工具直接消费这份上下文。
+`.axm/` 的设计让 Claude Code、Codex、OpenCode 等支持 [Anthropic Agent Skill](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) 规范的工具直接消费这份上下文。Axiom 现在按用户意图拆成一组技能：`axm-init`、`axm-maintain`、`axm-progress`、`axm-health-check`、`axm-preview`。
 
 ## 安装
 
-让 AI 帮你安装：
+推荐安装整组技能：
 
-```
-帮我安装 https://github.com/castle-x/axiom.git
+```bash
+git clone https://github.com/castle-x/axiom.git /tmp/axiom
+node /tmp/axiom/scripts/install-skills.mjs --target=~/.claude/skills
 ```
 
-或手动 `git clone` 到本地 skills 目录（如 `~/.claude/skills/axm/`）。
+安装到其他 Agent Skills 目录时，把 `--target` 换成对应目录，例如 `~/.codex/skills`。
+
+兼容安装仍然可用：把整个仓库 clone 到 `~/.claude/skills/axm/`，根目录 `SKILL.md` 会作为路由入口，把任务转到 `skills/axm-*`。
+
+技能分工：
+
+| Skill | 用途 |
+| --- | --- |
+| `axm-init` | 初始化 `.axm/` 与 `AGENTS.md` |
+| `axm-maintain` | 校验 axm-meta、同步 index、修 contract |
+| `axm-progress` | 管理 roadmap / spec / decision / BUG |
+| `axm-health-check` | 审计 `.axm` 与当前代码是否事实一致 |
+| `axm-preview` | 下载、启动、构建、发布只读预览器 |
 
 ## 用法
 
@@ -35,7 +48,7 @@ Axiom 把那份"你希望 AI 每次都已经知道的事情"沉淀成项目内�
 帮我初始化 axm
 ```
 
-AI 会按 5 阶段 SOP 执行（详见 `SKILL.md`）：
+AI 会调用 `axm-init` 并按 5 阶段 SOP 执行：
 
 | 阶段 | 谁做 | 做什么 |
 |---|---|---|
@@ -56,7 +69,7 @@ AI 会按 5 阶段 SOP 执行（详见 `SKILL.md`）：
 - **roadmap / spec**：`progress/<initiative>/{roadmap.md, specs/<spec>.md}`，用 axm-meta `workflow-state` 记录当前流程状态，验收标准固定分为 *AI 自动验收* + *人类验收*
 - **BUG**：`progress/<initiative>/bugs/bug-YYYY-MM-DD-<slug>.md`，自带优先级（P0–P3）、严重度（Blocker–Trivial）、固定 8 状态生命周期（`open` → `in-progress` → `fixed` → `verified` → `closed`，可走 `reopened` / `wont-fix` / `duplicate`），当前状态同样以 axm-meta `workflow-state` 为准；BUG 必须挂在某个 initiative 下，找不到归属时新建一个（推荐 `progress/quality/`）
 
-对 AI 说"用 axm 提一个 BUG" / "把这个 spec 闭合掉" 即可，AI 会自动遵循 `references/bug-doc-guide.md` 与 `references/progress-doc-guide.md` 的契约。
+对 AI 说"用 axm 提一个 BUG" / "把这个 spec 闭合掉" 即可，AI 会调用 `axm-progress`，并遵循该 skill 内的 `references/bug-doc-guide.md` 与 `references/progress-doc-guide.md` 契约。
 
 ## 产物长什么样
 
@@ -83,9 +96,9 @@ AI 会按 5 阶段 SOP 执行（详见 `SKILL.md`）：
             └── bugs/bug-YYYY-MM-DD-<slug>.md
 ```
 
-## axiom_preview 只读预览器
+## Axiom Preview 只读预览器
 
-`axiom_preview` 是 `.axm/` 的本地只读浏览器：启动一个 `127.0.0.1` 服务后，可以通过 `Open` 打开系统文件夹选择器、从项目名下拉切换最近打开的项目，或用 `Path` 输入项目路径。预览器会自动识别项目下的 `.axm/`，不用为每个项目单独开一个服务。
+`axiom-preview` 是 `.axm/` 的本地只读浏览器：启动一个 `127.0.0.1` 服务后，可以通过 `Open` 打开系统文件夹选择器、从项目名下拉切换最近打开的项目，或用 `Path` 输入项目路径。预览器会自动识别项目下的 `.axm/`，不用为每个项目单独开一个服务。
 
 它适合快速查看：
 
@@ -107,6 +120,19 @@ BUG 管理：
 
 ![axiom_preview BUG 管理弹窗](docs/assets/axiom-preview-bugs.png)
 
+最快启动方式：
+
+```bash
+npx @castle-xx/axm-preview --target=/path/to/project --port=8765
+```
+
+长期安装：
+
+```bash
+npm install -g @castle-xx/axm-preview
+axiom-preview --target=/path/to/project --port=8765
+```
+
 ## 直接调用脚本
 
 跳过 AI、放进 CI 或自动化时可独立使用：
@@ -123,13 +149,8 @@ node /path/to/axm/scripts/validate.mjs --target=<repo-root>
 # 同步 index（保留已有顺序，追加孤儿，删除失效）
 node /path/to/axm/scripts/reindex.mjs --target=<repo-root> [--dry-run]
 
-# 启动只读 localhost 预览器（legacy 纯 HTML + Canvas，仍保留）
-node /path/to/axm/scripts/preview.mjs [--target=<repo-root>] [--port=8765]
-# 或使用兼容原型图的启动方式
-python3 /path/to/axm/axm_preview.py [--target=<repo-root>] [--port=8765]
-
 # 构建新版 Go embedded SPA 预览器（React/Vite 前端嵌入 Go 二进制）
-cd /path/to/axm/preview
+cd /path/to/axm/apps/axm-preview
 make build
 ./bin/axiom-preview --target=<repo-root> --port=8765
 
@@ -137,7 +158,7 @@ make build
 make release VERSION=0.1.0
 ```
 
-新版预览器发布流程在 `.github/workflows/preview-release.yml`：推送 `preview-v<version>` tag 或手动运行 workflow 会构建 macOS / Linux / Windows 归档并创建 GitHub Release。配置仓库 secret `NPM_TOKEN` 后，同一流程会发布 npm 包 `@castle-xx/axm-preview`，用户可用 `npm install -g @castle-xx/axm-preview` 或 `npx @castle-xx/axm-preview` 启动。
+新版预览器源码在 `apps/axm-preview/`。发布流程在 `.github/workflows/preview-release.yml`：推送 `preview-v<version>` tag 或手动运行 workflow 会构建 macOS / Linux / Windows 归档并创建 GitHub Release。配置仓库 secret `NPM_TOKEN` 后，同一流程会发布 npm 包 `@castle-xx/axm-preview`，用户可用 `npm install -g @castle-xx/axm-preview` 或 `npx @castle-xx/axm-preview` 启动。
 
 校验四件事：axm-meta 字段完整性 + 日期格式、`index.md` 与同目录实际文件双向一致、`knowledge/**` 的 `code-refs` 指向的源码真实存在、`AGENTS.md` Knowledge Index 引用的 `.axm` 路径可达。
 
@@ -147,7 +168,7 @@ make release VERSION=0.1.0
 
 **AI 判断 + 脚本机械**。脚本负责跨项目逐字一致的内容（漂移会让多项目维护者抓狂），AI 负责必须读代码才写得对的内容（架构、源码地图、任务路由）。
 
-**零 npm 依赖**。`git clone` 即用，不需要 `npm install`。脚本全部使用 Node 内置模块。
+**零 npm 依赖的 skill 脚本**。`scaffold` / `validate` / `reindex` 都只用 Node 内置模块。Axiom Preview 作为独立 Go embedded SPA app 放在 `apps/axm-preview/`，并通过 npm 包或发布二进制分发。
 
 **契约严过头一点点**。AI 基于确定字段做路由决策，契约越严、推理越稳。对人类来说写 axm-meta 的成本远低于每次猜"这字段该填什么"的成本。
 
@@ -163,8 +184,8 @@ make release VERSION=0.1.0
 See [AGENTS.md](./AGENTS.md) for the canonical AI context.
 ```
 
-**universal 4 份规范怎么改？**
-改 axm 仓库本体里的 `templates/axm/universal/*.tpl`，不是某个用户项目里的副本。跨项目逐字一致是 universal 的核心价值。
+**universal 规范怎么改？**
+改 `skills/axm-init/templates/axm/universal/*.tpl`，不是某个用户项目里的副本。跨项目逐字一致是 universal 的核心价值。
 
 **有 `axm upgrade` 同步 universal 升级吗？**
 没有。`git pull && node scripts/scaffold.mjs --force` 解决大部分情况；边缘场景让 AI 做 diff 合并比脚本可靠。

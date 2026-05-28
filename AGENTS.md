@@ -1,20 +1,23 @@
 # AGENTS.md
 
-axm 是一个 Anthropic Agent Skill 包，用于帮新项目快速完成 `.axm/` 知识库与 `AGENTS.md` 根入口的初始化。本文是 AI 处理本仓库任务的入口规则文档。
+axm 是一组 Anthropic Agent Skills，用于帮项目建立、维护、审计 `.axm/` 知识库与 `AGENTS.md` 根入口，并提供只读预览器。本文是 AI 处理本仓库任务的入口规则文档。
 
-本仓库**不再 dogfood 自己生成的 `.axm/`**。维护 axm skill 时，以根目录源码、`SKILL.md`、`references/`、`templates/` 与 `scripts/` 为准；需要验证输出结构时，使用临时目标目录跑 scaffold/validate/reindex smoke test。
+本仓库**不再 dogfood 自己生成的 `.axm/`**。维护 axm skills 时，以根目录 `SKILL.md` 路由入口、`skills/axm-*`、`apps/axm-preview/`、`scripts/` 兼容 wrapper 与测试为准；需要验证输出结构时，使用临时目标目录跑 scaffold/validate/reindex smoke test。
 
 ## Architecture
 
-axm 采用**扁平结构**（非 monorepo），git clone 到 `~/.claude/skills/axm/` 或项目 skills 目录即用。
+axm 采用**多 skill family 结构**。根 `SKILL.md` 是兼容路由入口；真正的能力放在 `skills/axm-*`。预览器是独立 app，放在 `apps/axm-preview/`。根 `scripts/*.mjs` 保留为兼容 wrapper，方便旧文档和 CI 命令继续工作。
 
 ### 模块划分
 
-- `SKILL.md` — Anthropic Agent Skills 标准入口（YAML axm-meta + 5 阶段 SOP）
-- `references/*.md` — AI Phase 3 按需加载的写作指南（5 份）
-- `templates/**/*.tpl` — 脚本逐字释放的模板（含 `{{owner}}` / `{{date}}` / `{{project_name}}` 三个变量）
-- `scripts/*.mjs` — 零依赖 Node 脚本（scaffold / validate / reindex / preview）
-- `scripts/_lib/*.mjs` — 脚本共享模块（axm-meta 解析器、walker、logger）
+- `SKILL.md` — 兼容入口，只负责把任务路由到具体 `axm-*` skill
+- `skills/axm-init/` — 初始化 `.axm/` + `AGENTS.md`；包含 scaffold 脚本、模板、初始化写作指南
+- `skills/axm-maintain/` — validate / reindex 与契约修复；包含校验脚本与 axm-meta 指南
+- `skills/axm-progress/` — roadmap / spec / decision / BUG 文档生命周期
+- `skills/axm-health-check/` — 多 pass 文档体检、事实漂移审计、归档/闭合规则
+- `skills/axm-preview/` — 预览器启动、下载、构建、发布指引
+- `apps/axm-preview/` — Go embedded SPA 预览器源码、npm 包装、发布脚本
+- `scripts/*.mjs` — 根兼容 wrapper 与安装器；真实逻辑优先放到对应 skill 内
 - `AGENTS.md` — 本仓库维护入口规则
 
 ### 设计哲学
@@ -23,9 +26,10 @@ axm 采用**扁平结构**（非 monorepo），git clone 到 `~/.claude/skills/a
 
 ### 硬约束
 
-- **脚本零 npm 依赖**：只用 Node 内置模块
+- **skill 脚本零 npm 依赖**：只用 Node 内置模块
 - **模板变量只 3 个**：`{{owner}}` / `{{date}}` / `{{project_name}}`
-- **SKILL.md < 500 行**：超了拆到 `references/`
+- **每个 SKILL.md < 500 行**：超了拆到对应 skill 的 `references/`
+- **共享指南需要同步副本**：`axm-meta-contracts.md`、`bug-doc-guide.md`、`progress-doc-guide.md` 等被多个 skill 复制时，改一份必须同步相关副本
 - **扩展方向**：新能力优先走"改 SOP"或"改 references"，再考虑新增脚本；禁止让脚本做栈判断
 
 ## Coding Rules
@@ -103,11 +107,15 @@ axm 采用**扁平结构**（非 monorepo），git clone 到 `~/.claude/skills/a
 
 | 任务类型 | 读哪里 |
 | --- | --- |
-| 理解 skill 流程 / 修改 SOP | `SKILL.md` |
-| 修改 Phase 3 写作指南 | `references/*.md` |
-| 修改生成内容 / universal 规则 | `templates/**/*.tpl`，必要时同步相关 `references/*.md` |
-| 修改 scaffold/validate/reindex/preview | `scripts/*.mjs` + `scripts/_lib/*.mjs` |
-| 了解用户侧产物结构 | `README.md` 的"完成后你的仓库会多出"与 `templates/` |
+| 理解 skill 路由 | `SKILL.md` |
+| 修改初始化流程 / Phase 3 写作指南 | `skills/axm-init/SKILL.md` + `skills/axm-init/references/*.md` |
+| 修改生成内容 / universal 规则 | `skills/axm-init/templates/**/*.tpl`，必要时同步 `skills/axm-init/references/*.md` |
+| 修改 validate / reindex | `skills/axm-maintain/scripts/*.mjs` + `skills/axm-maintain/scripts/_lib/*.mjs` |
+| 修改 roadmap/spec/BUG 规则 | `skills/axm-progress/SKILL.md` + `skills/axm-progress/references/*.md` |
+| 修改 axm 体检流程 | `skills/axm-health-check/SKILL.md` + `skills/axm-health-check/references/*.md` |
+| 修改预览器启动 skill | `skills/axm-preview/SKILL.md` + `skills/axm-preview/references/preview-app.md` |
+| 修改 Go/React 预览器产品 | `apps/axm-preview/` |
+| 了解用户侧产物结构 | `README.md` 的"产物长什么样"与 `skills/axm-init/templates/` |
 | 验证脚本或模板改动 | 在临时目录运行 scaffold → validate → reindex |
 
 ## Quality Gate
@@ -117,5 +125,6 @@ axm 采用**扁平结构**（非 monorepo），git clone 到 `~/.claude/skills/a
 | 修改脚本 | `node scripts/validate.mjs --target=<临时 axm 项目>` | 零 ERROR（WARN 需解释） |
 | 修改模板 | `node scripts/scaffold.mjs --owner=smoke --date=<YYYY-MM-DD> --project-name=smoke --target=<临时目录>` 后接 validate/reindex | 生成结果可校验，且无 `{{...}}` 残留 |
 | 修改 `SKILL.md` / `references/` | 人工检查流程一致性；必要时跑一次完整 smoke test | 不引入与模板或脚本冲突的说明 |
+| 修改预览器 app | `make -C apps/axm-preview verify`（依赖已安装时） | Go/Node/e2e/release packaging 通过 |
 
 不要再用 `node scripts/validate.mjs --target=.` 作为本仓库自测；仓库根目录不是 axm 目标项目。

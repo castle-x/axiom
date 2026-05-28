@@ -45,7 +45,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: preview/go.mod
+          go-version-file: apps/axm-preview/go.mod
           cache: false
 
       - name: Setup pnpm
@@ -58,20 +58,20 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: preview/site/pnpm-lock.yaml
+          cache-dependency-path: apps/axm-preview/site/pnpm-lock.yaml
 
       - name: Install frontend dependencies
-        run: pnpm --dir preview/site install --frozen-lockfile
+        run: pnpm --dir apps/axm-preview/site install --frozen-lockfile
 
       - name: Install Playwright browser
-        run: pnpm --dir preview/site exec playwright install --with-deps chromium
+        run: pnpm --dir apps/axm-preview/site exec playwright install --with-deps chromium
 
       - name: Verify preview
-        run: make -C preview verify
+        run: make -C apps/axm-preview verify
 
       - name: Package preview release
-        run: make -C preview release VERSION=0.0.0-ci.0
+        run: make -C apps/axm-preview release VERSION=0.0.0-ci.0
 
       - name: Dry-run npm package
-        working-directory: preview/dist/npm
+        working-directory: apps/axm-preview/dist/npm
         run: npm pack --dry-run

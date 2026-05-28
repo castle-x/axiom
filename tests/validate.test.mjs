@@ -3,7 +3,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { afterEach, describe, test } from "node:test";
 
-import { buildPreviewModel } from "../scripts/_lib/preview-data.mjs";
 import {
 	assertExit,
 	cleanupTempRoots,
@@ -138,11 +137,9 @@ describe("validate CLI", () => {
 		fs.writeFileSync(path.join(root, ".axm/progress/bugs/README.txt"), "not an axm doc\n", "utf8");
 
 		const result = runNode("scripts/validate.mjs", [`--target=${root}`]);
-		const preview = buildPreviewModel(root);
 
 		assertExit(result, 1, "validate");
 		assert.match(combinedOutput(result), /\.axm\/progress\/bugs\//);
-		assert.ok(preview.validation.issues.some((issue) => issue.file === ".axm/progress/bugs/"));
 	});
 
 	test("random single BUG file names return ERROR", () => {
@@ -189,13 +186,10 @@ describe("validate CLI", () => {
 
 		const result = runNode("scripts/validate.mjs", [`--target=${root}`]);
 		const output = combinedOutput(result);
-		const preview = buildPreviewModel(root);
 
 		assertExit(result, 1, "validate");
 		assert.match(output, /bugs\/log\.md must use progress-type: roadmap/);
 		assert.match(output, /bugs\/log\.md initiative must match path initiative "foo"/);
-		assert.ok(preview.validation.issues.some((issue) => issue.message === "bugs/log.md must use progress-type: roadmap"));
-		assert.ok(preview.validation.issues.some((issue) => issue.message === 'bugs/log.md initiative must match path initiative "foo"'));
 	});
 
 	test("BUG file names reject invalid dates and malformed kebab-case slugs", () => {
@@ -223,11 +217,9 @@ describe("validate CLI", () => {
 
 		const result = runNode("scripts/validate.mjs", [`--target=${root}`]);
 		const output = combinedOutput(result);
-		const preview = buildPreviewModel(root);
 
 		assertExit(result, 1, "validate");
 		assert.match(output, /nested BUG subdirectories are not allowed/);
-		assert.ok(preview.validation.issues.some((issue) => issue.message.includes("nested BUG subdirectories are not allowed")));
 	});
 
 	test("nested bugs subdirectories return ERROR even without markdown docs", () => {
@@ -237,11 +229,9 @@ describe("validate CLI", () => {
 		fs.writeFileSync(path.join(root, ".axm/progress/foo/bugs/archive/README.txt"), "not an axm doc\n", "utf8");
 
 		const result = runNode("scripts/validate.mjs", [`--target=${root}`]);
-		const preview = buildPreviewModel(root);
 
 		assertExit(result, 1, "validate");
 		assert.match(combinedOutput(result), /\.axm\/progress\/foo\/bugs\/archive\//);
-		assert.ok(preview.validation.issues.some((issue) => issue.file === ".axm/progress/foo/bugs/archive/"));
 	});
 
 	test("bug-typed progress docs outside bugs directory return ERROR", () => {
@@ -254,11 +244,9 @@ describe("validate CLI", () => {
 
 		const result = runNode("scripts/validate.mjs", [`--target=${root}`]);
 		const output = combinedOutput(result);
-		const preview = buildPreviewModel(root);
 
 		assertExit(result, 1, "validate");
 		assert.match(output, /BUG docs must live directly under progress\/<initiative>\/bugs\//);
-		assert.ok(preview.validation.issues.some((issue) => issue.message === "BUG docs must live directly under progress/<initiative>/bugs/"));
 	});
 
 	test("bugs/log.md with progress-type roadmap remains valid", () => {
@@ -351,7 +339,7 @@ describe("validate CLI", () => {
 		assert.match(output, /21 affected file\(s\)/);
 	});
 
-	test("directory code-refs emit WARN in CLI and preview validation", () => {
+	test("directory code-refs emit WARN in CLI validation", () => {
 		const root = makeTempRepo("axm-dir-code-ref-");
 		fs.mkdirSync(path.join(root, "src"));
 		writeRootIndex(root, [{ path: "knowledge/", title: "Knowledge", "when-to-read": "Knowledge docs" }]);
@@ -367,17 +355,13 @@ describe("validate CLI", () => {
 
 		const result = runNode("scripts/validate.mjs", [`--target=${root}`]);
 		const output = combinedOutput(result);
-		const preview = buildPreviewModel(root);
 
 		assertExit(result, 2, "validate");
 		assert.match(output, /^\[WARN\].*code-refs.*目录/m);
-		assert.equal(preview.validation.status, "warn");
-		assert.equal(preview.validation.warnings, 1);
-		assert.match(preview.validation.issues[0].message, /目录/);
 	});
 
-	test("preview validation mirrors index orphan warnings", () => {
-		const root = makeTempRepo("axm-preview-orphan-");
+	test("validation reports index orphan warnings", () => {
+		const root = makeTempRepo("axm-orphan-");
 		writeRootIndex(root, [{ path: "project/", title: "Project", "when-to-read": "Project docs" }]);
 		writeDoc(root, ".axm/project/index.md", commonIndexMeta([]));
 		writeDoc(root, ".axm/project/orphan.md", {
@@ -388,16 +372,13 @@ describe("validate CLI", () => {
 		});
 
 		const result = runNode("scripts/validate.mjs", [`--target=${root}`]);
-		const preview = buildPreviewModel(root);
 
 		assertExit(result, 2, "validate");
 		assert.match(combinedOutput(result), /发现孤儿子项未登记到 entries：orphan\.md/);
-		assert.equal(preview.validation.status, "warn");
-		assert.ok(preview.validation.issues.some((issue) => issue.message === "发现孤儿子项未登记到 entries：orphan.md"));
 	});
 
-	test("preview validation mirrors orphan warnings when index entries are malformed", () => {
-		const root = makeTempRepo("axm-preview-malformed-index-");
+	test("validation reports orphan warnings when index entries are malformed", () => {
+		const root = makeTempRepo("axm-malformed-index-");
 		writeRootIndex(root, [{ path: "project/", title: "Project", "when-to-read": "Project docs" }]);
 		writeDoc(root, ".axm/project/index.md", {
 			"doc-state": "current",
@@ -412,19 +393,14 @@ describe("validate CLI", () => {
 		});
 
 		const result = runNode("scripts/validate.mjs", [`--target=${root}`]);
-		const preview = buildPreviewModel(root);
 
 		assertExit(result, 1, "validate");
 		assert.match(combinedOutput(result), /index 文档缺少 entries 列表/);
 		assert.match(combinedOutput(result), /发现孤儿子项未登记到 entries：orphan\.md/);
-		assert.equal(preview.validation.status, "error");
-		assert.equal(preview.validation.errors, 1);
-		assert.equal(preview.validation.warnings, 1);
-		assert.ok(preview.validation.issues.some((issue) => issue.message === "发现孤儿子项未登记到 entries：orphan.md"));
 	});
 
-	test("preview validation mirrors non-direct index entry errors", () => {
-		const root = makeTempRepo("axm-preview-index-entry-");
+	test("validation reports non-direct index entry errors", () => {
+		const root = makeTempRepo("axm-index-entry-");
 		writeRootIndex(root, [{ path: ".axm/universal/docs.md", title: "Docs", "when-to-read": "Invalid non-direct entry" }]);
 		writeDoc(root, ".axm/universal/index.md", commonIndexMeta([{ path: "docs.md", title: "Docs", "when-to-read": "Docs" }]));
 		writeDoc(root, ".axm/universal/docs.md", {
@@ -435,64 +411,40 @@ describe("validate CLI", () => {
 		});
 
 		const result = runNode("scripts/validate.mjs", [`--target=${root}`]);
-		const preview = buildPreviewModel(root);
 
 		assertExit(result, 1, "validate");
 		assert.match(combinedOutput(result), /entries 引用的子项不存在：\.axm\/universal\/docs\.md/);
-		assert.equal(preview.validation.status, "error");
-		assert.ok(preview.validation.issues.some((issue) => issue.message === "entries 引用的子项不存在：.axm/universal/docs.md"));
 	});
 
-	test("preview validation mirrors AGENTS.md warnings", () => {
-		const missingAgentsRoot = makeTempRepo("axm-preview-missing-agents-");
+	test("validation reports AGENTS.md warnings", () => {
+		const missingAgentsRoot = makeTempRepo("axm-missing-agents-");
 		fs.rmSync(path.join(missingAgentsRoot, "AGENTS.md"), { force: true });
 		writeRootIndex(missingAgentsRoot, []);
 
 		const missingAgentsCli = runNode("scripts/validate.mjs", [`--target=${missingAgentsRoot}`]);
-		const missingAgentsPreview = buildPreviewModel(missingAgentsRoot);
 
 		assertExit(missingAgentsCli, 2, "validate");
-		assert.equal(missingAgentsPreview.validation.status, "warn");
-		assert.ok(missingAgentsPreview.validation.issues.some((issue) => issue.message === "AGENTS.md 不存在（跳过引用检查）"));
+		assert.match(combinedOutput(missingAgentsCli), /AGENTS\.md 不存在/);
 
-		const missingIndexRoot = makeTempRepo("axm-preview-missing-knowledge-index-");
+		const missingIndexRoot = makeTempRepo("axm-missing-knowledge-index-");
 		fs.writeFileSync(path.join(missingIndexRoot, "AGENTS.md"), "# AGENTS.md\n", "utf8");
 		writeRootIndex(missingIndexRoot, []);
 
 		const missingIndexCli = runNode("scripts/validate.mjs", [`--target=${missingIndexRoot}`]);
-		const missingIndexPreview = buildPreviewModel(missingIndexRoot);
 
 		assertExit(missingIndexCli, 2, "validate");
-		assert.equal(missingIndexPreview.validation.status, "warn");
-		assert.ok(missingIndexPreview.validation.issues.some((issue) => issue.message === "未找到 '## Knowledge Index' 段（跳过引用检查）"));
+		assert.match(combinedOutput(missingIndexCli), /未找到 '## Knowledge Index' 段/);
 	});
 
-	test("preview validation mirrors missing axm-meta errors", () => {
-		const root = makeTempRepo("axm-preview-missing-meta-");
+	test("validation reports missing axm-meta errors", () => {
+		const root = makeTempRepo("axm-missing-meta-");
 		writeRootIndex(root, [{ path: "project/", title: "Project", "when-to-read": "Project docs" }]);
 		writeDoc(root, ".axm/project/index.md", commonIndexMeta([{ path: "a.md", title: "A", "when-to-read": "A" }]));
 		fs.writeFileSync(path.join(root, ".axm/project/a.md"), "# Missing metadata\n", "utf8");
 
 		const result = runNode("scripts/validate.mjs", [`--target=${root}`]);
-		const preview = buildPreviewModel(root);
 
 		assertExit(result, 1, "validate");
 		assert.match(combinedOutput(result), /缺少 axm-meta 注释块/);
-		assert.equal(preview.validation.status, "error");
-		assert.deepEqual(
-			preview.validation.issues.filter((issue) => issue.file === ".axm/project/a.md").map((issue) => issue.message),
-			["缺少 axm-meta 注释块（必须以 <!-- axm-meta 开头）"],
-		);
-	});
-
-	test("preview validation mirrors BUG contract checks", () => {
-		const root = makeProgressBugRepo();
-		writeDoc(root, ".axm/progress/foo/bugs/index.md", commonIndexMeta([{ path: "random.md", title: "Bug", "when-to-read": "Invalid bug" }]));
-		writeDoc(root, ".axm/progress/foo/bugs/random.md", progressMeta());
-
-		const model = buildPreviewModel(root);
-
-		assert.equal(model.validation.status, "error");
-		assert.ok(model.validation.issues.some((issue) => issue.rule === "bug-doc-guide.md §0.3"));
 	});
 });
