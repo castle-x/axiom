@@ -1,21 +1,234 @@
 # Axiom
 
-> 给项目一份**给 AI 看的**上下文目录 `.axm/` 与根入口 `AGENTS.md`，让 AI 接手任务时不必每次从零理解你的代码库。
+<p align="center">
+  <strong>AI-readable project context for code agents.</strong><br />
+  给项目一份给 AI 看的上下文目录。
+</p>
 
-## 它解决什么
+<p align="center">
+  <a href="#english">English</a> ·
+  <a href="#简体中文">简体中文</a>
+</p>
 
-每开一个新会话，AI 都要重新扫一遍 `package.json`、目录结构、README，再猜你的架构约束。猜得对当然好，猜错就要返工。
+<p align="center">
+  <a href="https://github.com/castle-x/axiom/stargazers">
+    <img alt="GitHub stars" src="https://img.shields.io/github/stars/castle-x/axiom?style=flat-square" />
+  </a>
+  <img alt="Agent Skills" src="https://img.shields.io/badge/Agent%20Skills-axm--init%20%7C%20maintain%20%7C%20progress%20%7C%20preview-c8912d?style=flat-square" />
+  <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-111827?style=flat-square" />
+</p>
 
-Axiom 把那份"你希望 AI 每次都已经知道的事情"沉淀成项目内的规范文档：
+<p align="center">
+  <img src="docs/assets/axiom-hero.png" alt="Axiom marketing poster: AI-readable project context" />
+</p>
 
-- 跨项目逐字一致的"宪法"（DEVLOOP、文档契约、质量门禁、VCS 规范、二审 review 契约）由脚本释放
-- 项目特有的架构、模块边界、源码地图由 AI 读完代码后撰写
-- BUG / roadmap / spec 等阶段性内容用 `doc-state` + `workflow-state` 统一骨架管理
-- 整套契约由零依赖 Node 脚本机械校验，避免人工漂移
+## English
 
-`.axm/` 的设计让 Claude Code、Codex、OpenCode 等支持 [Anthropic Agent Skill](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) 规范的工具直接消费这份上下文。Axiom 现在按用户意图拆成一组技能：`axm-init`、`axm-maintain`、`axm-progress`、`axm-health-check`、`axm-preview`。
+Axiom is a family of Anthropic Agent Skills for creating, maintaining, auditing, and previewing a project-local `.axm/` knowledge base plus the root `AGENTS.md` entry point.
 
-## 安装
+Instead of asking every new AI coding session to rediscover your repository from `package.json`, directory names, scattered docs, and guesswork, Axiom keeps the durable facts in a predictable structure:
+
+- universal rules that should stay byte-for-byte consistent across projects are released by scripts
+- project-specific architecture, coding rules, and knowledge maps are authored by an AI after it reads the codebase
+- roadmap, spec, decision, and BUG records share explicit `doc-state` and `workflow-state` metadata
+- zero-dependency Node scripts validate the contracts so drift is caught mechanically
+
+The result is a compact context layer that tools such as Claude Code, Codex, OpenCode, and other Agent Skills-aware workflows can read before they touch the code.
+
+### What You Get
+
+| Area | What Axiom provides |
+| --- | --- |
+| Project memory | `.axm/` knowledge base plus `AGENTS.md` Knowledge Index |
+| Skill family | `axm-init`, `axm-maintain`, `axm-progress`, `axm-health-check`, `axm-preview` |
+| Mechanical contracts | scaffold, validate, and reindex scripts with no npm dependencies |
+| Progress tracking | roadmap / spec / decision / BUG documents with lifecycle metadata |
+| Local preview | read-only Axiom Preview for Markdown, metadata, validation, search, bugs, and graph views |
+
+### Axiom Preview
+
+<table>
+  <tr>
+    <td width="33%" align="center">
+      <img src="docs/assets/axiom-preview.png" alt="Axiom Preview main interface" />
+    </td>
+    <td width="33%" align="center">
+      <img src="docs/assets/axiom-preview-bugs.png" alt="Axiom Preview BUG management" />
+    </td>
+    <td width="33%" align="center">
+      <img src="docs/assets/axiom-preview-graph.png" alt="Axiom Preview knowledge graph" />
+    </td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Main interface / 基础界面</sub></td>
+    <td align="center"><sub>BUG management / BUG 管理</sub></td>
+    <td align="center"><sub>Knowledge graph / 知识图谱</sub></td>
+  </tr>
+</table>
+
+### Quick Start
+
+Install the whole skill family:
+
+```bash
+git clone https://github.com/castle-x/axiom.git /tmp/axiom
+node /tmp/axiom/scripts/install-skills.mjs --target=~/.claude/skills
+```
+
+For another Agent Skills directory, replace `--target`, for example:
+
+```bash
+node /tmp/axiom/scripts/install-skills.mjs --target=~/.codex/skills
+```
+
+Then go to a project root and ask your agent:
+
+```text
+帮我初始化 axm
+```
+
+The agent should route to `axm-init` and run the five-phase workflow:
+
+| Phase | Owner | Output |
+| --- | --- | --- |
+| 1. Discover | AI | repository profile for confirmation |
+| 2. Scaffold | script | `.axm/universal/`, index skeleton, and `AGENTS.md` skeleton |
+| 3. Author | AI | project architecture, coding rules, knowledge docs, Knowledge Index |
+| 4. Validate | script | axm-meta, index, code-ref, and AGENTS route checks |
+| 5. Handoff | AI | completion summary and remaining TODOs |
+
+Compatibility install is still available: clone this repository into `~/.claude/skills/axm/`. The root `SKILL.md` works as a router to the specific `skills/axm-*` entries.
+
+### Skill Family
+
+| Skill | Use it for |
+| --- | --- |
+| `axm-init` | initialize `.axm/` and `AGENTS.md` |
+| `axm-maintain` | validate axm-meta, sync indexes, repair contract issues |
+| `axm-progress` | manage roadmap, spec, decision, and BUG documents |
+| `axm-health-check` | audit `.axm/` facts against the current codebase |
+| `axm-preview` | download, start, build, or package the read-only previewer |
+
+### Output Layout
+
+```text
+<your-project>/
+├── AGENTS.md                       # AI root entry point with Knowledge Index
+└── .axm/
+    ├── index.md
+    ├── universal/                  # cross-project rules released by script
+    │   ├── docs.md
+    │   ├── devloop.md
+    │   ├── quality.md
+    │   ├── vcs.md
+    │   └── review.md
+    ├── project/                    # project-specific rules authored by AI
+    │   ├── architecture.md
+    │   └── coding.md
+    ├── knowledge/                  # system knowledge authored by AI
+    │   └── <system>/overview.md
+    └── progress/
+        └── <initiative>/
+            ├── roadmap.md
+            ├── specs/<spec>.md
+            └── bugs/bug-YYYY-MM-DD-<slug>.md
+```
+
+### Axiom Preview
+
+`axiom-preview` is a local, read-only browser for `AGENTS.md` and `.axm/`. It binds to `127.0.0.1`, opens a target project, and lets you inspect Markdown, axm-meta, validation summaries, search results, index relationships, Knowledge Graph, and BUG records.
+
+Fastest startup:
+
+```bash
+npx @castle-xx/axm-preview --target=/path/to/project --port=8765
+```
+
+Persistent install:
+
+```bash
+npm install -g @castle-xx/axm-preview
+axiom-preview --target=/path/to/project --port=8765
+```
+
+Build from this repository:
+
+```bash
+cd apps/axm-preview
+make build
+./bin/axiom-preview --target=/path/to/project --port=8765
+```
+
+The previewer does not run scaffold, validate, or reindex from the UI, and it does not write to the target repository.
+
+### Scripts
+
+Use the scripts directly when you want CI or automation without an interactive agent:
+
+```bash
+# release the skeleton; refuses to overwrite unless --force is passed
+node /path/to/axiom/scripts/scaffold.mjs \
+  --owner=<team-or-name> --date=2026-06-01 \
+  --project-name=<name> --target=<repo-root>
+
+# validate contracts; exit 0 pass, 1 error, 2 warning
+node /path/to/axiom/scripts/validate.mjs --target=<repo-root>
+
+# sync indexes; dry-run first when reviewing changes
+node /path/to/axiom/scripts/reindex.mjs --target=<repo-root> --dry-run
+node /path/to/axiom/scripts/reindex.mjs --target=<repo-root>
+```
+
+Validation checks axm-meta fields and dates, old `status:` metadata, index entries versus real files, `knowledge/**` code-refs, `AGENTS.md` Knowledge Index routes, and progress / BUG placement rules.
+
+### Design Notes
+
+**AI judgment + script copying.** Scripts release the cross-project constitution; AI writes the facts that require reading the target codebase.
+
+**Zero npm dependencies for skill scripts.** `scaffold`, `validate`, and `reindex` only use Node built-in modules. Axiom Preview is the separate Go embedded SPA under `apps/axm-preview/`.
+
+**Stricter contracts make routing easier.** Agents can make better decisions when document state, workflow state, indexes, and code references have predictable shapes.
+
+### FAQ
+
+**Will scaffold overwrite my existing `AGENTS.md`?**
+
+No. The default behavior skips existing files. Use `--force` only when you intentionally want replacement.
+
+**Does this conflict with `CLAUDE.md` or `.cursorrules`?**
+
+No. Keep `AGENTS.md` as the canonical AI context and add a forwarding file when a client only reads another entry point:
+
+```md
+# CLAUDE.md
+See [AGENTS.md](./AGENTS.md) for the canonical AI context.
+```
+
+**Where should universal rules be changed?**
+
+Change `skills/axm-init/templates/axm/universal/*.tpl`, then scaffold or merge into target projects. The point of `universal/` is byte-for-byte consistency.
+
+**Is there an `axm upgrade` command?**
+
+No. `git pull && node scripts/scaffold.mjs --force` handles most template refreshes; edge cases are better merged by an AI that can inspect the project-specific diff.
+
+## 简体中文
+
+Axiom 是一组 Anthropic Agent Skills，用来为项目创建、维护、审计 `.axm/` 知识库与根入口 `AGENTS.md`，并提供本地只读预览器。
+
+它解决的是一个很日常的问题：每开一个新 AI 编程会话，AI 都要重新扫 `package.json`、目录结构、README，再猜你的架构约束。Axiom 把那份“你希望 AI 每次都已经知道的事情”沉淀成项目内的规范文档。
+
+### 核心能力
+
+| 能力 | 说明 |
+| --- | --- |
+| 项目上下文 | 生成 `.axm/` 知识库与 `AGENTS.md` Knowledge Index |
+| 技能拆分 | `axm-init` / `axm-maintain` / `axm-progress` / `axm-health-check` / `axm-preview` |
+| 机械校验 | 零 npm 依赖的 scaffold / validate / reindex 脚本 |
+| 进度文档 | roadmap / spec / decision / BUG 统一使用 `doc-state` + `workflow-state` |
+| 只读预览 | 本地查看 Markdown、axm-meta、校验结果、搜索、BUG 与 Knowledge Graph |
+
+### 安装
 
 推荐安装整组技能：
 
@@ -24,101 +237,54 @@ git clone https://github.com/castle-x/axiom.git /tmp/axiom
 node /tmp/axiom/scripts/install-skills.mjs --target=~/.claude/skills
 ```
 
-安装到其他 Agent Skills 目录时，把 `--target` 换成对应目录，例如 `~/.codex/skills`。
+安装到其他 Agent Skills 目录时，把 `--target` 换成对应目录，例如：
+
+```bash
+node /tmp/axiom/scripts/install-skills.mjs --target=~/.codex/skills
+```
 
 兼容安装仍然可用：把整个仓库 clone 到 `~/.claude/skills/axm/`，根目录 `SKILL.md` 会作为路由入口，把任务转到 `skills/axm-*`。
 
-技能分工：
-
-| Skill | 用途 |
-| --- | --- |
-| `axm-init` | 初始化 `.axm/` 与 `AGENTS.md` |
-| `axm-maintain` | 校验 axm-meta、同步 index、修 contract |
-| `axm-progress` | 管理 roadmap / spec / decision / BUG |
-| `axm-health-check` | 审计 `.axm` 与当前代码是否事实一致 |
-| `axm-preview` | 下载、启动、构建、发布只读预览器 |
-
-## 用法
-
-### 给一个新项目初始化
+### 用法
 
 到项目根目录，对 AI 说：
 
-```
+```text
 帮我初始化 axm
 ```
 
-AI 会调用 `axm-init` 并按 5 阶段 SOP 执行：
+AI 会调用 `axm-init` 并按 5 阶段执行：
 
 | 阶段 | 谁做 | 做什么 |
-|---|---|---|
+| --- | --- | --- |
 | 1. Discover | AI | 扫源码、生成项目画像，给你确认 |
-| 2. Scaffold | 脚本 | 释放 `.axm/universal/` 5 份通用规范 + 索引骨架 + `AGENTS.md` 骨架 |
-| 3. Author | AI | 写项目特有的 `architecture.md` / `coding.md` / `knowledge/<system>/overview.md`，补全 `AGENTS.md` 路由表 |
-| 4. Validate | 脚本 | 校验 axm-meta、index 一致性、code-refs 真实性 |
+| 2. Scaffold | 脚本 | 释放 `.axm/universal/`、索引骨架与 `AGENTS.md` 骨架 |
+| 3. Author | AI | 写项目架构、编码规范、知识文档，补全 Knowledge Index |
+| 4. Validate | 脚本 | 校验 axm-meta、index、code-refs 与 AGENTS 路由 |
 | 5. Handoff | AI | 输出完成清单与 TODO |
 
-### 已有项目接 axm
+### 已有项目怎么接
 
-- 已有 `AGENTS.md` 但没有 `.axm/`：直接走 5 阶段，scaffold 默认跳过 `AGENTS.md`，AI 后续手动补 Knowledge Index 段
-- 已有 `.axm/` 怀疑漂移：跑 Phase 4 校验即可
-- 改过 `.axm/**/*.md` 后索引乱了：跑 reindex 同步
+- 已有 `AGENTS.md` 但没有 `.axm/`：直接走 5 阶段，scaffold 默认跳过 `AGENTS.md`，AI 后续手动补 Knowledge Index。
+- 已有 `.axm/` 怀疑漂移：使用 `axm-maintain` 跑 validate，必要时修契约。
+- 改过 `.axm/**/*.md` 后索引乱了：先 `reindex --dry-run`，确认后再写入并 validate。
 
 ### 管理开发进度与 BUG
 
-- **roadmap / spec**：`progress/<initiative>/{roadmap.md, specs/<spec>.md}`，用 axm-meta `workflow-state` 记录当前流程状态，验收标准固定分为 *AI 自动验收* + *人类验收*
-- **BUG**：`progress/<initiative>/bugs/bug-YYYY-MM-DD-<slug>.md`，自带优先级（P0–P3）、严重度（Blocker–Trivial）、固定 8 状态生命周期（`open` → `in-progress` → `fixed` → `verified` → `closed`，可走 `reopened` / `wont-fix` / `duplicate`），当前状态同样以 axm-meta `workflow-state` 为准；BUG 必须挂在某个 initiative 下，找不到归属时新建一个（推荐 `progress/quality/`）
+- **roadmap / spec**：放在 `progress/<initiative>/{roadmap.md, specs/<spec>.md}`，用 axm-meta 的 `workflow-state` 表示当前流程状态。
+- **BUG**：放在 `progress/<initiative>/bugs/bug-YYYY-MM-DD-<slug>.md`，包含优先级、严重度、复现、验收与生命周期状态。
 
-对 AI 说"用 axm 提一个 BUG" / "把这个 spec 闭合掉" 即可，AI 会调用 `axm-progress`，并遵循该 skill 内的 `references/bug-doc-guide.md` 与 `references/progress-doc-guide.md` 契约。
+对 AI 说“用 axm 提一个 BUG”或“把这个 spec 闭合掉”，AI 会调用 `axm-progress` 并遵循对应文档契约。
 
-## 产物长什么样
+### Axiom Preview 只读预览器
 
-```
-<your-project>/
-├── AGENTS.md                       # AI 根入口（含 .axm 召回声明、Knowledge Index）
-└── .axm/
-    ├── index.md
-    ├── universal/                  # 跨项目通用"宪法"
-    │   ├── docs.md                 # 四套 axm-meta 骨架契约
-    │   ├── devloop.md              # DEVLOOP 状态机
-    │   ├── quality.md              # 测试策略 + 质量门禁
-    │   ├── vcs.md                  # 分支 + 提交规范
-    │   └── review.md               # 二审 review 七条契约
-    ├── project/                    # 项目特有规范（AI 写）
-    │   ├── architecture.md
-    │   └── coding.md
-    ├── knowledge/                  # 项目知识（AI 写）
-    │   └── <system>/overview.md
-    └── progress/
-        └── <initiative>/
-            ├── roadmap.md              # doc-state + workflow-state
-            ├── specs/<spec>.md         # doc-state + workflow-state
-            └── bugs/bug-YYYY-MM-DD-<slug>.md
-```
-
-## Axiom Preview 只读预览器
-
-`axiom-preview` 是 `.axm/` 的本地只读浏览器：启动一个 `127.0.0.1` 服务后，可以通过 `Open` 打开系统文件夹选择器、从项目名下拉切换最近打开的项目，或用 `Path` 输入项目路径。预览器会自动识别项目下的 `.axm/`，不用为每个项目单独开一个服务。
-
-它适合快速查看：
+`axiom-preview` 是 `.axm/` 的本地只读浏览器。它会启动一个 `127.0.0.1` 服务，用来查看：
 
 - `AGENTS.md` 与 `.axm/` 文件树
-- Markdown 正文、axm-meta（含 `doc-state` / `workflow-state`）与契约校验结果
+- Markdown 正文、axm-meta、校验摘要与 code-refs
 - 搜索结果、索引关系与 Knowledge Graph
-- 顶部 `bugs` 统计与可搜索、可过滤、可跳转的 BUG 管理弹窗
+- 顶部 BUG 统计与可搜索、可过滤、可跳转的 BUG 管理弹窗
 - 最近打开项目的一键切换
-
-主页：
-
-![axiom_preview 只读预览器界面](docs/assets/axiom-preview.png)
-
-知识图谱：
-
-![axiom_preview Knowledge Graph 视图](docs/assets/axiom-preview-graph.png)
-
-BUG 管理：
-
-![axiom_preview BUG 管理弹窗](docs/assets/axiom-preview-bugs.png)
 
 最快启动方式：
 
@@ -133,62 +299,41 @@ npm install -g @castle-xx/axm-preview
 axiom-preview --target=/path/to/project --port=8765
 ```
 
-## 直接调用脚本
+预览器只展示 `AGENTS.md` 与 `.axm/` 文档、索引关系、axm-meta、校验摘要和 code-refs 路径；Web UI 不提供 scaffold / validate / reindex 执行入口，也不会写入目标仓库。
+
+### 直接调用脚本
 
 跳过 AI、放进 CI 或自动化时可独立使用：
 
 ```bash
-# 释放骨架（默认拒绝覆盖；--force 才覆盖）
-node /path/to/axm/scripts/scaffold.mjs \
-  --owner=<team-or-name> --date=2026-05-14 \
+# 释放骨架，默认拒绝覆盖，--force 才覆盖
+node /path/to/axiom/scripts/scaffold.mjs \
+  --owner=<team-or-name> --date=2026-06-01 \
   --project-name=<name> --target=<repo-root>
 
-# 校验契约（exit 0 PASS / 1 error / 2 warn）
-node /path/to/axm/scripts/validate.mjs --target=<repo-root>
+# 校验契约，exit 0 PASS / 1 error / 2 warn
+node /path/to/axiom/scripts/validate.mjs --target=<repo-root>
 
-# 同步 index（保留已有顺序，追加孤儿，删除失效）
-node /path/to/axm/scripts/reindex.mjs --target=<repo-root> [--dry-run]
-
-# 构建新版 Go embedded SPA 预览器（React/Vite 前端嵌入 Go 二进制）
-cd /path/to/axm/apps/axm-preview
-make build
-./bin/axiom-preview --target=<repo-root> --port=8765
-
-# 生成 macOS / Linux / Windows 发布包
-make release VERSION=0.1.0
+# 同步 index，建议先 dry-run
+node /path/to/axiom/scripts/reindex.mjs --target=<repo-root> --dry-run
+node /path/to/axiom/scripts/reindex.mjs --target=<repo-root>
 ```
 
-新版预览器源码在 `apps/axm-preview/`。发布流程在 `.github/workflows/preview-release.yml`：推送 `preview-v<version>` tag 或手动运行 workflow 会构建 macOS / Linux / Windows 归档并创建 GitHub Release。配置仓库 secret `NPM_TOKEN` 后，同一流程会发布 npm 包 `@castle-xx/axm-preview`，用户可用 `npm install -g @castle-xx/axm-preview` 或 `npx @castle-xx/axm-preview` 启动。
+### 设计取舍
 
-校验四件事：axm-meta 字段完整性 + 日期格式、`index.md` 与同目录实际文件双向一致、`knowledge/**` 的 `code-refs` 指向的源码真实存在、`AGENTS.md` Knowledge Index 引用的 `.axm` 路径可达。
+**AI 判断 + 脚本抄写。** 脚本负责跨项目逐字一致的内容，AI 负责必须读代码才写得对的内容。
 
-预览器仅展示 `AGENTS.md` 与 `.axm/` 文档、索引关系、axm-meta、校验摘要和 code-refs 路径；Web UI 不提供 scaffold / validate / reindex 执行入口，也不会写入目标仓库。
+**skill 脚本零 npm 依赖。** `scaffold` / `validate` / `reindex` 都只用 Node 内置模块。Axiom Preview 作为独立 Go embedded SPA app 放在 `apps/axm-preview/`。
 
-## 设计取舍
+**契约严一点，路由稳一点。** AI 基于确定字段做路由决策，契约越稳，推理越稳。
 
-**AI 判断 + 脚本机械**。脚本负责跨项目逐字一致的内容（漂移会让多项目维护者抓狂），AI 负责必须读代码才写得对的内容（架构、源码地图、任务路由）。
+## Star History
 
-**零 npm 依赖的 skill 脚本**。`scaffold` / `validate` / `reindex` 都只用 Node 内置模块。Axiom Preview 作为独立 Go embedded SPA app 放在 `apps/axm-preview/`，并通过 npm 包或发布二进制分发。
-
-**契约严过头一点点**。AI 基于确定字段做路由决策，契约越严、推理越稳。对人类来说写 axm-meta 的成本远低于每次猜"这字段该填什么"的成本。
-
-## FAQ
-
-**会覆盖我已有的 `AGENTS.md` 吗？**
-不会。scaffold 默认 skip，需要 `--force` 才覆盖。
-
-**与 `CLAUDE.md` / `.cursorrules` 冲突吗？**
-不冲突。`AGENTS.md` 是开放标准。客户端只读 `CLAUDE.md` 时建一个转发文件即可：
-```md
-# CLAUDE.md
-See [AGENTS.md](./AGENTS.md) for the canonical AI context.
-```
-
-**universal 规范怎么改？**
-改 `skills/axm-init/templates/axm/universal/*.tpl`，不是某个用户项目里的副本。跨项目逐字一致是 universal 的核心价值。
-
-**有 `axm upgrade` 同步 universal 升级吗？**
-没有。`git pull && node scripts/scaffold.mjs --force` 解决大部分情况；边缘场景让 AI 做 diff 合并比脚本可靠。
+<p align="center">
+  <a href="https://www.star-history.com/#castle-x/axiom&Date">
+    <img src="https://api.star-history.com/svg?repos=castle-x/axiom&type=Date" alt="Star History Chart" />
+  </a>
+</p>
 
 ## License
 
