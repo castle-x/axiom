@@ -14,6 +14,7 @@ import {
   EyeOff,
   FileText,
   Folder,
+  Github,
   Languages,
   Moon,
   Network,
@@ -224,6 +225,11 @@ export function App() {
           </Button>
           <Button variant="ghost" size="icon" onClick={() => changeLanguage(i18n.language === "zh" ? "en" : "zh")} aria-label={t("language")}>
             <Languages className="icon-16" aria-hidden="true" />
+          </Button>
+          <Button asChild variant="ghost" size="icon" aria-label={t("github")}>
+            <a href="https://github.com/castle-x/axiom" target="_blank" rel="noreferrer">
+              <Github className="icon-16" aria-hidden="true" />
+            </a>
           </Button>
         </div>
       </header>

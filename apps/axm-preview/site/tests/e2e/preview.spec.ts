@@ -201,6 +201,7 @@ test("header search stays usable inside the compact toolbar rhythm", async ({ pa
 
     const search = page.locator("#searchInput")
     const searchShell = page.locator("[data-testid='search-shell']")
+    const githubLink = page.getByRole("link", { name: /Open GitHub repository|打开 GitHub 仓库/i })
     await expect(search).toBeVisible()
 
     const header = page.locator("header")
@@ -210,11 +211,13 @@ test("header search stays usable inside the compact toolbar rhythm", async ({ pa
       page.getByRole("button", { name: /Open bug inventory|打开问题清单/i }),
       page.getByRole("button", { name: /Theme|主题/i }),
       page.getByRole("button", { name: /Language|语言/i }),
+      githubLink,
     ]
 
     await search.fill("layout")
     await expect(search).toHaveValue("layout")
     await expect(page.getByText(layoutTarget.longDocPath).first()).toBeVisible()
+    await expect(githubLink).toHaveAttribute("href", "https://github.com/castle-x/axiom")
 
     for (const control of controls) {
       const box = await requiredBox(control)
